@@ -43,3 +43,23 @@ export type Artifact = {
   body: string
   model_used: string
 }
+
+export type Discarded = { idea: string; reason: string; stage: string }
+
+export type Capability = {
+  name: string; kind: string; source: string; bound_at: string
+  slug?: string; why?: string; spec?: any
+}
+
+export type MonitorJob = { name: string; query: string; access: string; cadence: string; rationale: string }
+
+export type ChangelogEntry = { monitor: string; summary: string; new: string[]; changed: string[]; at: string; run_id: string }
+
+export type MemoryView = {
+  active: boolean
+  formatted_context: string
+  facts: any[]
+  episodes: any[]
+  temporal_events: any[]
+  conversation_id?: string
+}

@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react'
-import { analyze, chatApi, researchApi, uiRender, openInTab, escapeHtml } from './api'
-import type { Ev, Profile, Objective, Source, Opp, Artifact } from './types'
+import { useEffect, useRef, useState } from 'react'
+import { analyze, chatApi, researchApi, uiRender, memoryView, monitorsView, runMonitors, openInTab, escapeHtml } from './api'
+import type { Ev, Profile, Objective, Source, Opp, Artifact, Discarded, Capability, MonitorJob, ChangelogEntry, MemoryView } from './types'
 
 function modelColor(m?: string) {
   if (!m) return '#8a8378'
@@ -11,6 +11,7 @@ function modelColor(m?: string) {
   if (m.includes('composio')) return '#7b6cb3'
   if (m.includes('hackernews')) return '#c8642e'
   if (m.includes('synap')) return '#a65a7e'
+  if (m.includes('skill')) return '#6f8f3e'
   return '#8a8378'
 }
 
@@ -48,6 +49,7 @@ function OpportunityCard({ o }: { o: Opp }) {
 
 function RadarCard({ o, art }: { o: Opp; art?: Artifact }) {
   const [copied, setCopied] = useState(false)
+  const [open, setOpen] = useState(false)
   function copy() {
     if (!art) return
     navigator.clipboard?.writeText(art.body)
@@ -62,14 +64,18 @@ function RadarCard({ o, art }: { o: Opp; art?: Artifact }) {
   }
   return (
     <div className="radarcard">
-      <div className="radarhead"><span className="radardot" /><span className="opptitle">{o.title}</span></div>
+      <div className="radarhead" onClick={() => setOpen(!open)}>
+        <span className="radardot" /><span className="opptitle">{o.title}</span>
+        {art && <span className="chev">{open ? '−' : '+'}</span>}
+      </div>
       <p className="why">{o.why}</p>
       <div className="radarmeta">
         {o.source_name && <span className="chip">{o.source_name}</span>}
         {o.template_id && <span className="chip ghost">{o.template_id}</span>}
         {o.thread_url && <a href={o.thread_url} target="_blank" rel="noreferrer" className="chip link">open thread ↗</a>}
+        {art && !open && <button className="chip linkbtn" onClick={() => setOpen(true)}>show drafted reply ▾</button>}
       </div>
-      {art && (
+      {art && open && (
         <div className="draft">
           <div className="drafthead">Drafted reply <Badge model={art.model_used} /></div>
           <pre className="draftbody">{art.body}</pre>
@@ -83,10 +89,19 @@ function RadarCard({ o, art }: { o: Opp; art?: Artifact }) {
   )
 }
 
+const TABS = [
+  { id: 'brief', label: 'Brief' },
+  { id: 'synap', label: 'Synap Memory' },
+  { id: 'monitors', label: 'Monitors' },
+  { id: 'reasoning', label: 'Reasoning log' },
+  { id: 'capabilities', label: 'Capabilities' },
+]
+
 export default function App() {
   const [url, setUrl] = useState('resend.com')
   const [mode, setMode] = useState<'cached' | 'live'>('cached')
   const [running, setRunning] = useState(false)
+  const [tab, setTab] = useState('brief')
   const [trace, setTrace] = useState<Ev[]>([])
   const [profile, setProfile] = useState<Profile | null>(null)
   const [objective, setObjective] = useState<Objective | null>(null)
@@ -95,15 +110,19 @@ export default function App() {
   const [strategic, setStrategic] = useState<Opp[]>([])
   const [radar, setRadar] = useState<Opp[]>([])
   const [artifacts, setArtifacts] = useState<Record<string, Artifact>>({})
+  const [ledger, setLedger] = useState<Discarded[]>([])
+  const [caps, setCaps] = useState<Capability[]>([])
+  const [monitorJobs, setMonitorJobs] = useState<MonitorJob[]>([])
   const esRef = useRef<EventSource | null>(null)
 
   function run() {
     if (running || !url.trim()) return
     setRunning(true); setTrace([]); setProfile(null); setObjective(null); setSources([]); setCompanyType('')
-    setStrategic([]); setRadar([]); setArtifacts({})
+    setStrategic([]); setRadar([]); setArtifacts({}); setLedger([]); setCaps([]); setMonitorJobs([]); setTab('brief')
     esRef.current = analyze(url.trim(), mode,
       (e) => {
-        if (e.type === 'step' || e.type === 'memory' || e.type === 'finding' || e.type === 'reflect') setTrace((t) => [...t, e])
+        if (e.type === 'step' || e.type === 'memory' || e.type === 'finding' || e.type === 'reflect'
+            || e.type === 'tool_bound' || e.type === 'skill_bound') setTrace((t) => [...t, e])
         else if (e.type === 'profile') setProfile(e.data)
         else if (e.type === 'objective') { setObjective(e.data); setTrace((t) => [...t, e]) }
         else if (e.type === 'sources') { setSources(e.data?.sources || []); setCompanyType(e.data?.company_type || ''); setTrace((t) => [...t, e]) }
@@ -111,6 +130,9 @@ export default function App() {
         else if (e.type === 'opportunities') setStrategic(e.data || [])
         else if (e.type === 'radar') setRadar(e.data || [])
         else if (e.type === 'artifact') { const a = e.data as Artifact; setArtifacts((m) => ({ ...m, [a.opportunity_id || a.id]: a })) }
+        else if (e.type === 'discarded') { setLedger((l) => [...l, ...(e.data || [])]); setTrace((t) => [...t, e]) }
+        else if (e.type === 'capabilities') setCaps(e.data || [])
+        else if (e.type === 'monitors') setMonitorJobs(e.data || [])
       },
       () => setRunning(false),
       () => setRunning(false),
@@ -150,20 +172,76 @@ export default function App() {
         </div>
       )}
 
-      {objective && (
-        <div className="objbanner">
-          <div className="objlabel">OBJECTIVE{profile?.stage ? ' · ' + profile.stage : ''}</div>
-          <div className="objtext">{objective.objective}</div>
+      {started && (
+        <nav className="tabs">
+          {TABS.map((t) => (
+            <button key={t.id} className={'tab' + (tab === t.id ? ' on' : '')} onClick={() => setTab(t.id)}>
+              {t.label}
+              {t.id === 'reasoning' && ledger.length > 0 && <span className="tabcount">{ledger.length}</span>}
+              {t.id === 'monitors' && monitorJobs.length > 0 && <span className="tabcount">{monitorJobs.length}</span>}
+            </button>
+          ))}
+        </nav>
+      )}
+
+      {started && tab === 'brief' && (
+        <BriefTab {...{ objective, profile, companyType, sources, radar, strategic, artifacts, trace, running, openTrace, url }} />
+      )}
+      {tab === 'synap' && <SynapTab url={url} />}
+      {tab === 'monitors' && <MonitorsTab url={url} jobs={monitorJobs} />}
+      {tab === 'reasoning' && <ReasoningTab ledger={ledger} />}
+      {tab === 'capabilities' && <CapabilitiesTab caps={caps} trace={trace} />}
+    </div>
+  )
+}
+
+function ObjectiveBanner({ objective, profile }: { objective: Objective; profile: Profile | null }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="objbanner">
+      <div className="objtop">
+        <span className="objlabel">OBJECTIVE{profile?.stage ? ' · ' + profile.stage : ''}</span>
+        {(objective.reasoning || objective.not_this) &&
+          <button className="objtoggle" onClick={() => setOpen(!open)}>{open ? 'hide reasoning ▴' : 'why ▾'}</button>}
+      </div>
+      <div className="objtext">{objective.objective}</div>
+      {open && (
+        <div className="objdetail">
           {objective.reasoning && <div className="objwhy">{objective.reasoning}</div>}
           {objective.not_this && <div className="objnot">Not: {objective.not_this}</div>}
         </div>
       )}
+    </div>
+  )
+}
 
+function ProfileBar({ profile }: { profile: Profile }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="profilebar">
+      <div className="profrow" onClick={() => setOpen(!open)}>
+        <span><b>{profile.name}</b> — {profile.one_liner}</span>
+        <span className="chev">{open ? '−' : '+'}</span>
+      </div>
+      {open && (
+        <div className="profdetail muted">
+          {profile.category} · ICP: {profile.icp}
+          {profile.competitors?.length > 0 && <div>vs {profile.competitors.join(', ')}</div>}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function BriefTab({ objective, profile, companyType, sources, radar, strategic, artifacts, trace, running, openTrace, url }: any) {
+  return (
+    <>
+      {objective && <ObjectiveBanner objective={objective} profile={profile} />}
       <div className="grid">
         <aside className="rail">
           <div className="railhead">Agent trace {running && <span className="spin" />}</div>
           <div className="tracelist">
-            {trace.map((e, i) => (
+            {trace.map((e: Ev, i: number) => (
               <div key={i} className={'titem t-' + e.type} onClick={() => openTrace(e)} title="open in tab ↗">
                 <span className="tdot" style={{ background: modelColor(e.model) }} />
                 <span className="tlabel">{e.label}</span>
@@ -175,18 +253,13 @@ export default function App() {
         </aside>
 
         <main className="main">
-          {profile && (
-            <div className="profilebar">
-              <b>{profile.name}</b> — {profile.one_liner}
-              <div className="muted">{profile.category} · ICP: {profile.icp}</div>
-            </div>
-          )}
+          {profile && <ProfileBar profile={profile} />}
 
           {sources.length > 0 && (
             <section className="card">
               <h3>Where your customers actually are <span className="muted">{companyType}</span></h3>
               <div className="sourcemap">
-                {sources.map((s, i) => (
+                {sources.map((s: Source, i: number) => (
                   <div className="srcchip" key={i} title={s.why}><b>{s.name}</b><span className="srckind">{s.access}</span></div>
                 ))}
               </div>
@@ -196,7 +269,7 @@ export default function App() {
           {radar.length > 0 && (
             <section className="card">
               <h3>Engagement radar <span className="muted">specific places to show up — with drafts</span></h3>
-              {radar.map((o) => <RadarCard key={o.id} o={o} art={artifacts[o.id]} />)}
+              {radar.map((o: Opp) => <RadarCard key={o.id} o={o} art={artifacts[o.id]} />)}
             </section>
           )}
 
@@ -204,9 +277,9 @@ export default function App() {
             <section className="card">
               <h3>Prioritized moves</h3>
               {PRIORITIES.map((p) => {
-                const list = strategic.filter((o) => (o.priority || 'P1').toUpperCase().startsWith(p))
+                const list = strategic.filter((o: Opp) => (o.priority || 'P1').toUpperCase().startsWith(p))
                 if (!list.length) return null
-                return <div key={p} className="prigroup">{list.map((o) => <OpportunityCard key={o.id} o={o} />)}</div>
+                return <div key={p} className="prigroup">{list.map((o: Opp) => <OpportunityCard key={o.id} o={o} />)}</div>
               })}
             </section>
           )}
@@ -215,9 +288,212 @@ export default function App() {
             <OpenUIPanel profile={profile} objective={objective} strategic={strategic} radar={radar} />
           )}
 
-          {started && <ChatDock url={url} />}
+          <ChatDock url={url} />
         </main>
       </div>
+    </>
+  )
+}
+
+function SynapTab({ url }: { url: string }) {
+  const [mem, setMem] = useState<MemoryView | null>(null)
+  const [busy, setBusy] = useState(false)
+  async function load() {
+    setBusy(true)
+    try { setMem(await memoryView(url)) } catch { /* ignore */ }
+    setBusy(false)
+  }
+  useEffect(() => { load() }, [url])
+  return (
+    <div className="tabpanel">
+      <div className="panelhead">
+        <div>
+          <h2>Maximem Synap <span className="muted">the company's durable market brain</span></h2>
+          <p className="panellede">Every run recalls what's known, reasons, then writes back. This is the memory that makes run #2 sharper than run #1, and compounds across monitors.</p>
+        </div>
+        <button className="mini" onClick={load} disabled={busy}>{busy ? 'loading…' : 'refresh'}</button>
+      </div>
+
+      <div className="synaploop">
+        <span className="loopnode">recall</span><span className="looparrow">→</span>
+        <span className="loopnode">reason</span><span className="looparrow">→</span>
+        <span className="loopnode write">write</span><span className="looparrow">↺</span>
+      </div>
+
+      {mem && (
+        <div className="memstat">
+          <span className={'memdot ' + (mem.active ? 'on' : '')} />
+          {mem.active ? 'Synap connected' : 'local fallback brain'} · {mem.facts.length} facts · {mem.episodes.length} episodes
+        </div>
+      )}
+
+      {mem?.formatted_context && (
+        <section className="card">
+          <h3>Recalled context</h3>
+          <pre className="memctx">{mem.formatted_context.slice(0, 4000)}</pre>
+        </section>
+      )}
+
+      {mem && mem.facts.length > 0 && (
+        <section className="card">
+          <h3>Stored facts <span className="muted">{mem.facts.length}</span></h3>
+          <div className="memitems">
+            {mem.facts.slice(0, 40).map((f: any, i: number) => (
+              <div className="memitem" key={i}>
+                {f.kind && <span className="memkind">{f.kind}</span>}
+                <span>{f.text || f.fact || f.content || JSON.stringify(f).slice(0, 200)}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {mem && !mem.facts.length && !busy && (
+        <div className="muted empty-inline">No memory yet for this company. Run the agent once, then come back, the brain fills in.</div>
+      )}
+    </div>
+  )
+}
+
+function MonitorsTab({ url, jobs }: { url: string; jobs: MonitorJob[] }) {
+  const [changelog, setChangelog] = useState<ChangelogEntry[]>([])
+  const [stored, setStored] = useState<MonitorJob[]>([])
+  const [busy, setBusy] = useState(false)
+  const [ran, setRan] = useState(false)
+  async function load() {
+    try { const r = await monitorsView(url); setStored(r.jobs || []); setChangelog(r.changelog || []) } catch { /* ignore */ }
+  }
+  useEffect(() => { load() }, [url])
+  async function runNow() {
+    setBusy(true); setRan(false)
+    try { const r = await runMonitors(url); setChangelog(r.changelog || []); setRan(true) } catch { /* ignore */ }
+    setBusy(false)
+  }
+  const list = jobs.length ? jobs : stored
+  return (
+    <div className="tabpanel">
+      <div className="panelhead">
+        <div>
+          <h2>Recurring monitors <span className="muted">the agent self-identified what to watch</span></h2>
+          <p className="panellede">These run automatically on their cadence. Each run diffs against Synap and records only what's new, so you read deltas, not repeats.</p>
+        </div>
+        <button className="run" onClick={runNow} disabled={busy || !list.length}>{busy ? 'running…' : 'Run monitors now'}</button>
+      </div>
+
+      {!list.length && <div className="muted empty-inline">No monitors yet. Run an analysis, the agent decides what's worth watching.</div>}
+
+      <div className="monitorgrid">
+        {list.map((m, i) => (
+          <div className="monitorcard" key={i}>
+            <div className="monitorhead"><b>{m.name}</b><span className="cadence">{m.cadence}</span></div>
+            <div className="muted monitorq">{m.query}</div>
+            <div className="monitorwhy">{m.rationale}</div>
+            <span className="srckind">{m.access}</span>
+          </div>
+        ))}
+      </div>
+
+      {(changelog.length > 0 || ran) && (
+        <section className="card">
+          <h3>What's new <span className="muted">delta feed</span></h3>
+          {!changelog.length && <div className="muted">No deltas yet. The last run found nothing new.</div>}
+          {changelog.map((c, i) => (
+            <div className="changelog" key={i}>
+              <div className="changehead"><b>{c.monitor}</b><span className="muted">{(c.at || '').slice(0, 16).replace('T', ' ')}</span></div>
+              <div className="why">{c.summary}</div>
+              {c.new?.length > 0 && <ul className="changenew">{c.new.map((n, j) => <li key={j}>{n}</li>)}</ul>}
+            </div>
+          ))}
+        </section>
+      )}
+    </div>
+  )
+}
+
+function ReasoningTab({ ledger }: { ledger: Discarded[] }) {
+  const stages = ['plan', 'reflect', 'synthesize']
+  return (
+    <div className="tabpanel">
+      <div className="panelhead">
+        <div>
+          <h2>Reasoning log <span className="muted">ideas considered and discarded</span></h2>
+          <p className="panellede">The roads not taken, with reasons. So you don't have to wonder whether the agent was thorough.</p>
+        </div>
+      </div>
+      {!ledger.length && <div className="muted empty-inline">No discarded ideas captured this run.</div>}
+      {stages.map((st) => {
+        const items = ledger.filter((d) => d.stage === st)
+        if (!items.length) return null
+        return (
+          <section className="card" key={st}>
+            <h3>Ruled out at {st}</h3>
+            {items.map((d, i) => (
+              <div className="discard" key={i}>
+                <div className="discardidea">{d.idea}</div>
+                <div className="discardwhy muted">{d.reason}</div>
+              </div>
+            ))}
+          </section>
+        )
+      })}
+    </div>
+  )
+}
+
+function CapabilitiesTab({ caps, trace }: { caps: Capability[]; trace: Ev[] }) {
+  // fall back to trace-derived bindings if the final snapshot hasn't arrived
+  const liveBound = trace.filter((e) => e.type === 'tool_bound' || e.type === 'skill_bound')
+  const tools = caps.filter((c) => c.kind === 'tool')
+  const skills = caps.filter((c) => c.kind === 'skill')
+  return (
+    <div className="tabpanel">
+      <div className="panelhead">
+        <div>
+          <h2>Capabilities <span className="muted">tools and skills, bound at runtime</span></h2>
+          <p className="panellede">The agent isn't limited to what it had at plan-time. When it needs a tool or a channel voice it lacks, it discovers and binds one on the fly.</p>
+        </div>
+      </div>
+
+      {!caps.length && !liveBound.length && <div className="muted empty-inline">Run the agent to see which tools and skills it binds.</div>}
+
+      {tools.length > 0 && (
+        <section className="card">
+          <h3>Tools</h3>
+          <div className="capgrid">
+            {tools.map((c, i) => (
+              <div className={'capcard ' + (c.bound_at === 'runtime' ? 'discovered' : '')} key={i}>
+                <div className="caphead"><b>{c.slug || c.name}</b>
+                  <span className={'capsrc ' + c.source}>{c.bound_at === 'runtime' ? 'discovered' : c.source}</span></div>
+                {c.why && <div className="muted capwhy">{c.why}</div>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {skills.length > 0 && (
+        <section className="card">
+          <h3>Writing skills</h3>
+          <div className="capgrid">
+            {skills.map((c, i) => (
+              <div className={'capcard ' + (c.source === 'generated' ? 'discovered' : '')} key={i}>
+                <div className="caphead"><b>{c.name.replace('skill:', '')}</b>
+                  <span className={'capsrc ' + c.source}>{c.source}</span></div>
+                {c.why && <div className="muted capwhy">{c.why}</div>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {!caps.length && liveBound.length > 0 && (
+        <section className="card">
+          <h3>Binding live…</h3>
+          {liveBound.map((e, i) => (
+            <div className="discard" key={i}><div className="discardidea">{e.label}</div></div>
+          ))}
+        </section>
+      )}
     </div>
   )
 }

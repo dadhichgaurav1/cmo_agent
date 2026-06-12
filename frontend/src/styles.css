@@ -154,3 +154,74 @@ body {
 
 /* openui frame */
 .openui-frame { width: 100%; height: 540px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: #fff; }
+
+/* tabs */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 24px; flex-wrap: wrap; }
+.tab { font-family: var(--sans); background: transparent; border: 0; border-bottom: 2px solid transparent; color: var(--ink-3); padding: 10px 14px; font-size: 13.5px; cursor: pointer; transition: all 0.12s; margin-bottom: -1px; display: flex; align-items: center; gap: 7px; }
+.tab:hover { color: var(--ink); }
+.tab.on { color: var(--accent-deep); border-bottom-color: var(--accent); font-weight: 600; }
+.tabcount { font-size: 10px; font-weight: 700; background: var(--accent-tint); color: var(--accent-deep); border-radius: 999px; padding: 1px 7px; }
+
+/* objective banner — compact, expand for reasoning (Addendum 6) */
+.objtop { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.objtoggle { font-family: var(--sans); background: transparent; border: 1px solid var(--line); color: var(--ink-3); font-size: 11.5px; padding: 3px 11px; border-radius: 999px; cursor: pointer; transition: all 0.12s; white-space: nowrap; }
+.objtoggle:hover { border-color: var(--accent); color: var(--accent-deep); }
+.objtext { font-family: var(--serif); font-size: 21px; line-height: 1.32; font-weight: 500; letter-spacing: -0.01em; color: var(--ink); margin: 9px 0 0; }
+.objdetail { margin-top: 13px; padding-top: 13px; border-top: 1px solid var(--line); }
+
+/* profile bar — collapsible */
+.profrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
+.profdetail { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); line-height: 1.6; }
+
+/* generic tab panel */
+.tabpanel { display: flex; flex-direction: column; gap: 18px; }
+.panelhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.panelhead h2 { font-family: var(--serif); font-weight: 500; font-size: 24px; letter-spacing: -0.01em; color: var(--ink); }
+.panelhead h2 .muted { font-family: var(--sans); font-size: 13px; }
+.panellede { color: var(--ink-2); font-size: 14px; line-height: 1.6; max-width: 640px; margin-top: 8px; }
+.empty-inline { padding: 40px 4px; }
+
+/* chip button */
+.chip.linkbtn { font-family: var(--sans); background: var(--accent-tint); border: 0; color: var(--accent-deep); cursor: pointer; font-weight: 500; }
+.chip.linkbtn:hover { background: #f3ddd2; }
+
+/* Synap tab */
+.synaploop { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
+.loopnode { font-size: 12px; font-weight: 600; color: var(--ink-2); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 16px; }
+.loopnode.write { background: var(--accent-tint); color: var(--accent-deep); border-color: transparent; }
+.looparrow { color: var(--ink-3); font-size: 14px; }
+.memstat { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); }
+.memdot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); }
+.memdot.on { background: #4a9d6e; box-shadow: 0 0 0 3px #4a9d6e22; }
+.memctx { white-space: pre-wrap; word-break: break-word; font-size: 12.5px; line-height: 1.6; color: var(--ink-2); background: var(--surface-2); padding: 14px; border-radius: var(--radius-sm); max-height: 320px; overflow-y: auto; font-family: var(--sans); }
+.memitems { display: flex; flex-direction: column; gap: 8px; }
+.memitem { display: flex; gap: 10px; align-items: baseline; font-size: 13.5px; color: var(--ink); line-height: 1.5; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.memitem:last-child { border-bottom: 0; }
+.memkind { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent-deep); background: var(--accent-tint); border-radius: 5px; padding: 2px 7px; flex-shrink: 0; }
+
+/* Monitors tab */
+.monitorgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.monitorcard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+.monitorhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cadence { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 2px 8px; }
+.monitorq { font-size: 12.5px; margin: 8px 0; font-style: italic; }
+.monitorwhy { font-size: 13px; color: var(--ink-2); line-height: 1.5; margin-bottom: 10px; }
+.changelog { border-left: 2px solid var(--accent); padding: 4px 0 4px 14px; margin-bottom: 14px; }
+.changehead { display: flex; align-items: baseline; gap: 10px; justify-content: space-between; margin-bottom: 5px; }
+.changenew { margin: 8px 0 0 16px; display: flex; flex-direction: column; gap: 5px; font-size: 13px; color: var(--ink-2); line-height: 1.5; }
+
+/* Reasoning tab */
+.discard { padding: 11px 0; border-bottom: 1px solid var(--line); }
+.discard:last-child { border-bottom: 0; }
+.discardidea { font-size: 14px; color: var(--ink); line-height: 1.5; }
+.discardwhy { font-size: 13px; margin-top: 3px; }
+
+/* Capabilities tab */
+.capgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.capcard { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px; }
+.capcard.discovered { border-color: var(--accent); background: var(--accent-tint); }
+.caphead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.caphead b { font-size: 13px; word-break: break-word; }
+.capsrc { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3); background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 2px 6px; flex-shrink: 0; }
+.capsrc.composio, .capsrc.generated { color: var(--accent-deep); border-color: transparent; background: #f3ddd2; }
+.capwhy { font-size: 12px; margin-top: 7px; line-height: 1.45; }

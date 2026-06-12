@@ -3,6 +3,7 @@ import type { Ev } from './types'
 const EVENT_TYPES = [
   'step', 'memory', 'profile', 'objective', 'sources', 'plan',
   'finding', 'reflect', 'opportunities', 'radar', 'artifact',
+  'tool_bound', 'skill_bound', 'capabilities', 'discarded', 'monitors', 'update',
 ]
 
 export function analyze(
@@ -59,6 +60,26 @@ export async function uiRender(payload: any) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   })
+  return r.json()
+}
+
+function slugify(url: string): string {
+  const host = (url || '').toLowerCase().replace(/^https?:\/\//, '').split('/')[0]
+  return host.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'company'
+}
+
+export async function memoryView(url: string) {
+  const r = await fetch(`/api/memory/${slugify(url)}`)
+  return r.json()
+}
+
+export async function monitorsView(url: string) {
+  const r = await fetch(`/api/monitors/${slugify(url)}`)
+  return r.json()
+}
+
+export async function runMonitors(url: string) {
+  const r = await fetch(`/api/monitors/${slugify(url)}/run`, { method: 'POST' })
   return r.json()
 }
 
