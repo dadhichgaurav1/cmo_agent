@@ -4,5 +4,6 @@ __pycache__/
 .venv/
 venv/
 dist/
+backend/static/
 .env
 .DS_Store

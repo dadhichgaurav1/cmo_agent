@@ -6,8 +6,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from app import graph as agent_graph
+from app import models as M
+from app import tools as T
+from app.memory import memory
 
 app = FastAPI(title="CMO Cofounder")
 app.add_middleware(
@@ -71,6 +75,39 @@ async def analyze_stream(url: str, mode: str = "live"):
             await task
 
     return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+class ChatBody(BaseModel):
+    url: str
+    message: str
+    history: list = []
+
+
+@app.post("/api/chat")
+async def chat(body: ChatBody):
+    slug = agent_graph.slugify(body.url)
+    ctx = await memory.recall(slug, [body.message])
+    system = ("You are the founder's CMO cofounder copilot. Be concrete, brief, and specific to THIS company. "
+              "Think adjacencies, wedges, channels and stage — never generic advice.")
+    human = (f"Company context from memory:\n{ctx[:1500]}\n\n" if ctx else "") + f"Founder asks: {body.message}"
+    reply, name = await M.run_text("chat", system, human, max_tokens=700)
+    return {"reply": reply, "model": name}
+
+
+class ResearchBody(BaseModel):
+    url: str
+    query: str
+
+
+@app.post("/api/research")
+async def research(body: ResearchBody):
+    findings = await T.exa_search(body.query, num=5)
+    block = "\n".join(f"- {f.title} ({f.url}): {f.snippet[:160]}" for f in findings)
+    system = ("You are a CMO cofounder. Turn raw research into 3 sharp, non-obvious, actionable takeaways "
+              "for the founder — no filler.")
+    human = f"Research question: {body.query}\nFindings:\n{block or '(none)'}\n\nReturn 3 concise takeaways."
+    takeaways, name = await M.run_text("synthesize", system, human, max_tokens=600)
+    return {"findings": [f.model_dump() for f in findings], "takeaways": takeaways, "model": name}
 
 
 # Serve the built frontend if present (single-container deploy)
