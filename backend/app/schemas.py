@@ -1,42 +1,93 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
 
 class CompanyProfile(BaseModel):
-    url: str
+    url: str = ""
     name: str = ""
     one_liner: str = ""
     stage: str = ""        # pre-seed | seed | series A | growth | unknown
-    category: str = ""     # market category
-    domain: str = ""       # business domain
-    icp: str = ""          # ideal customer profile
+    category: str = ""
+    domain: str = ""
+    icp: str = ""
     competitors: List[str] = Field(default_factory=list)
     keywords: List[str] = Field(default_factory=list)
 
 
-class ResearchFinding(BaseModel):
+class Objective(BaseModel):
+    objective: str = ""        # the single stage-appropriate marketing objective
+    reasoning: str = ""        # why this, for this stage
+    not_this: str = ""         # what it is explicitly NOT (e.g. "raw traffic")
+
+
+class ProfileObjective(BaseModel):
+    profile: CompanyProfile
+    objective: Objective
+
+
+class Source(BaseModel):
+    name: str
+    kind: str = ""             # community | review | social | news | search
+    why: str = ""
+    access: str = "exa"        # exa | hackernews | reddit | browser
+    template_id: str = "outreach"
+
+
+class SourceStrategy(BaseModel):
+    company_type: str = ""
+    sources: List[Source] = Field(default_factory=list)
+
+
+class PlanItem(BaseModel):
+    goal: str = ""
+    query: str = ""
+    access: str = "exa"        # exa | hackernews | reddit | browser
+
+
+class PlanOut(BaseModel):
+    items: List[PlanItem] = Field(default_factory=list)
+
+
+class ReflectOut(BaseModel):
+    sufficient: bool = False
+    critique: str = ""
+    extra_query: Optional[str] = None
+    extra_access: Optional[str] = None
+
+
+class Finding(BaseModel):
     title: str = ""
     url: str = ""
     snippet: str = ""
     source: str = "exa"
 
 
-class ActionItem(BaseModel):
+class Opportunity(BaseModel):
     id: str = ""
-    title: str
+    title: str = ""
+    type: str = "strategic"    # strategic | engagement
     why: str = ""
-    priority: str = "P1"          # P0 | P1 | P2
-    impact: str = "medium"        # high | medium | low
-    effort: str = "medium"        # high | medium | low
-    category: str = ""            # positioning | content | GTM | growth | product-marketing
+    priority: str = "P1"       # P0 | P1 | P2
+    impact: str = "medium"
+    effort: str = "medium"
+    category: str = ""
     steps: List[str] = Field(default_factory=list)
     sources: List[str] = Field(default_factory=list)
+    # engagement-specific
+    source_name: str = ""
+    thread_url: str = ""
+    template_id: str = ""
+
+
+class SynthesisOut(BaseModel):
+    opportunities: List[Opportunity] = Field(default_factory=list)
+
+
+class Artifact(BaseModel):
+    id: str = ""
+    opportunity_id: str = ""
+    title: str = ""
+    channel: str = ""
+    body: str = ""
     model_used: str = ""
-
-
-class Skill(BaseModel):
-    name: str
-    when_to_use: str = ""
-    prompt: str = ""
-    generated: bool = True

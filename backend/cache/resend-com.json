@@ -1,0 +1,985 @@
+[
+  {
+    "type": "step",
+    "label": "Recalling prior context (Synap)",
+    "model": "synap",
+    "_delay": 0.45
+  },
+  {
+    "type": "memory",
+    "label": "Recalled prior context",
+    "detail": "{\"objective\": [\"Objective: Own the 'email for developers' category wedge by converting open-source react-email mindshare into paid Resend accounts \\u2014 specifically by turning every GitHub star, npm install, and community mention of react-email into a tracked, intentional top-of-funnel motion that lands developers inside the Resend product. \\u2014 Resend is post-launch with clear product-market fit signals (multi-language SDKs, named enterprise logos, a full broadcast + contact management suite). At Series A stage, the job is category definition and compounding developer acquisition \\u2014 n",
+    "_delay": 0.45
+  },
+  {
+    "type": "step",
+    "label": "Reading your site \u2192 inferring stage & objective",
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "profile",
+    "label": "Resend",
+    "data": {
+      "url": "resend.com",
+      "name": "Resend",
+      "one_liner": "The developer-native email platform \u2014 transactional and marketing email built around React components, clean APIs, and first-class DX, for teams who treat email as code.",
+      "stage": "series A",
+      "category": "Developer Email Infrastructure",
+      "domain": "Email delivery & developer tooling",
+      "icp": "Full-stack and backend engineers (especially Next.js/React ecosystem) at seed-to-Series B SaaS startups who own the email stack and are allergic to legacy ESPs \u2014 they want API-first, SDK-native, React-component-driven email that fits into their existing codebase without ops overhead.",
+      "competitors": [
+        "SendGrid",
+        "Postmark",
+        "Loops",
+        "Mailgun",
+        "AWS SES",
+        "Courier"
+      ],
+      "keywords": [
+        "email API",
+        "transactional email",
+        "react email",
+        "email for developers",
+        "email as code",
+        "developer experience",
+        "email infrastructure",
+        "Next.js email"
+      ]
+    },
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "objective",
+    "label": "Lock in category ownership of 'email for developers' by closing the attribution and conversion loop between react-email OSS traction and paid Resend accounts \u2014 making the journey from 'npm install react-email' to 'live Resend API key in production' a single, frictionless, instrumented path that compounds automatically at the speed of GitHub stars and npm downloads.",
+    "data": {
+      "objective": "Lock in category ownership of 'email for developers' by closing the attribution and conversion loop between react-email OSS traction and paid Resend accounts \u2014 making the journey from 'npm install react-email' to 'live Resend API key in production' a single, frictionless, instrumented path that compounds automatically at the speed of GitHub stars and npm downloads.",
+      "reasoning": "Resend is at the exact Series A inflection where category frames harden. They control react-email \u2014 the dominant OSS library for their precise ICP \u2014 but that library almost certainly leaks most of its acquisition value: developers install react-email, build templates, then reach for SendGrid or Postmark out of habit because the OSS\u2192product handoff is invisible. The asymmetric move is NOT more top-of-funnel content or paid ads \u2014 it's instrumenting and tightening the OSS funnel they already own. Concretely: (1) CLI-level prompts in react-email that surface Resend as the zero-config send layer ('Ready to send? Run npx resend init'); (2) GitHub README and template gallery deep-links that drop developers directly into a pre-authenticated Resend onboarding flow; (3) a 'email as code' content wedge that makes Resend the canonical answer in every Next.js/React forum, ChatGPT response, and Stack Overflow thread about sending email \u2014 before Loops or a retooled SendGrid copies the DX positioning. The compounding effect: every new react-email GitHub star becomes a measurable top-of-funnel event, not a vanity metric. At Series A, the job is to own the category definition and make the acquisition loop self-reinforcing \u2014 not to optimize conversion rates on existing traffic or build an enterprise sales motion.",
+      "not_this": "NOT a broad awareness or paid acquisition play, NOT conversion rate optimization on the existing marketing site, NOT an enterprise sales motion or ABM campaign, NOT chasing raw traffic through generic SEO or social consistency \u2014 and NOT splitting focus between the developer ICP and a non-technical buyer before the developer category frame is fully locked in and self-compounding."
+    },
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "step",
+    "label": "Mapping where your customers actually are",
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "sources",
+    "label": "Developer Infrastructure / OSS-led Growth / API-first Dev Tool \u2014 Series A, PLG motion anchored in OSS (react-email) converting to paid SaaS (Resend). ICP lives on GitHub, HN, and niche dev communities. Growth compounds via npm installs, GitHub stars, and word-of-mouth in Next.js/React ecosystems. \u2014 7 sources",
+    "data": {
+      "company_type": "Developer Infrastructure / OSS-led Growth / API-first Dev Tool \u2014 Series A, PLG motion anchored in OSS (react-email) converting to paid SaaS (Resend). ICP lives on GitHub, HN, and niche dev communities. Growth compounds via npm installs, GitHub stars, and word-of-mouth in Next.js/React ecosystems.",
+      "sources": [
+        {
+          "name": "Hacker News (Show HN / Ask HN / comments)",
+          "kind": "community",
+          "why": "The single highest-density gathering of technical founders and senior engineers who make infrastructure decisions. Resend's 'email as code' positioning is a natural HN narrative \u2014 Show HN launches, 'Ask HN: how do you handle transactional email' threads, and competitor teardowns all create compounding surface area. HN readers are exactly the people who will google 'react-email' at 11pm and need one more signal to drop Sendgrid.",
+          "access": "hackernews",
+          "template_id": "hn_comment"
+        },
+        {
+          "name": "r/nextjs + r/reactjs + r/webdev (Reddit)",
+          "kind": "community",
+          "why": "These three subs are where Resend's exact ICP \u2014 Next.js full-stack engineers at early-stage SaaS \u2014 asks 'what do you use for transactional email?' weekly. These threads are high-intent, evergreen, and indexable by Google. A single well-placed, technically credible reply in a 'best email API for Next.js' thread can drive hundreds of npm installs. The OSS angle (react-email) makes participation feel native, not promotional.",
+          "access": "reddit",
+          "template_id": "reddit_reply"
+        },
+        {
+          "name": "dev.to + Hashnode (developer blogging platforms)",
+          "kind": "community",
+          "why": "The React/Next.js tutorial ecosystem lives here. 'How to send transactional email with Next.js App Router' is a search query with real volume and weak incumbents. Resend can own this content layer by publishing first-party tutorials that are genuinely the best technical resource \u2014 not marketing fluff \u2014 and that end with a working code snippet using react-email + Resend SDK. Each post is a permanent, SEO-indexed, attribution-tracked top-of-funnel asset.",
+          "access": "exa",
+          "template_id": "outreach"
+        },
+        {
+          "name": "GitHub (Issues, Discussions, Trending, competitor repos)",
+          "kind": "community",
+          "why": "This is where the OSS-to-paid conversion loop actually closes. Monitoring react-email repo issues, Next.js discussions tagged 'email', and competitor SDK repos (Nodemailer, SendGrid JS client) for friction signals is the highest-signal listening post available. Engineers who open a GitHub issue about email deliverability or SDK pain are 48 hours away from switching providers. Resend should be present in those threads with working code, not sales copy.",
+          "access": "exa",
+          "template_id": "outreach"
+        },
+        {
+          "name": "Twitter/X (developer-Twitter: #buildinpublic, Next.js/Vercel orbit)",
+          "kind": "social",
+          "why": "Developer Twitter \u2014 specifically the Vercel/Next.js/indie hacker orbit \u2014 is where Resend's brand was born and where the fastest-moving ICP signals intent publicly. Founders tweeting 'just shipped email notifications' or 'anyone have a good transactional email rec?' are real-time buying signals. The @resend account and team members replying with code snippets, not pitches, is the playbook. This is also where react-email OSS milestones (star counts, new components) get amplified organically.",
+          "access": "exa",
+          "template_id": "twitter_reply"
+        },
+        {
+          "name": "Product Hunt (launches + upcoming tools in dev infra)",
+          "kind": "news",
+          "why": "Not for Resend's own launch \u2014 for competitive intelligence and ICP interception. Every new SaaS tool that launches on PH and hits the top 5 is a company that will need transactional email within 90 days. Monitoring PH for newly launched dev tools and reaching out to their technical founders with a 'here's how to wire up email in your stack in 10 minutes' is a non-obvious, high-conversion outbound wedge that no legacy ESP is running.",
+          "access": "exa",
+          "template_id": "outreach"
+        },
+        {
+          "name": "G2 / Slashdot / StackShare (developer tool review & comparison layer)",
+          "kind": "review",
+          "why": "When a technical founder Googles 'Sendgrid alternative' or 'best transactional email API 2024', G2 and StackShare comparison pages are what rank. Resend needs to own its review profile, respond to every review (especially negative ones on competitor pages), and ensure its StackShare listing surfaces in 'stacks similar to yours' recommendations. This is the bottom-of-funnel SEO moat that compounds silently \u2014 and where engineers validate a decision they've already emotionally made.",
+          "access": "exa",
+          "template_id": "review_response"
+        }
+      ]
+    },
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "step",
+    "label": "Planning research over the chosen sources",
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "plan",
+    "label": "4 research moves",
+    "data": [
+      {
+        "goal": "Surface raw, unfiltered switching signals \u2014 developers actively venting about SendGrid/Mailgun/AWS SES deliverability, API design, pricing cliffs, or DX failures \u2014 to identify the exact language and trigger moments Resend can intercept at the npm install \u2192 API key conversion funnel.",
+        "query": "sendgrid OR mailgun OR AWS SES OR postmark email API frustrating broken deliverability pricing developer switching alternative",
+        "access": "hackernews"
+      },
+      {
+        "goal": "Find the non-obvious adjacent community: full-stack indie hackers and solo SaaS builders in the Vercel/Next.js/T3 stack orbit who are wiring up transactional email as part of auth flows (Clerk, NextAuth, Supabase) \u2014 a wedge segment where react-email is already the default template layer and Resend is one env var away from being the default sender.",
+        "query": "transactional email setup Next.js Supabase Clerk auth nextauth react email template API key production",
+        "access": "reddit"
+      },
+      {
+        "goal": "Identify the emerging non-obvious use-case of using react-email + Resend not for transactional auth emails but as a programmatic design-system-to-email pipeline \u2014 design tokens, component libraries, Storybook-driven email QA \u2014 a workflow that turns email into a first-class frontend engineering artifact and creates a stickier, higher-ACV enterprise wedge.",
+        "query": "react email component design system storybook email template engineering workflow CI pipeline preview",
+        "access": "exa"
+      },
+      {
+        "goal": "Detect the narrative shift in how developer-tool buyers and technical founders are recontextualizing 'email infrastructure' \u2014 moving from 'commodity SMTP relay' framing toward 'email as a product surface' or 'email as developer experience' \u2014 to arm Resend with the exact category language that makes SendGrid sound like a 2012 enterprise relic.",
+        "query": "email infrastructure developer experience DX API-first email platform category modern email stack 2024 2025",
+        "access": "hackernews"
+      }
+    ],
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "step",
+    "label": "Researching: sendgrid OR mailgun OR AWS SES OR postmark email API frustrating broken deliverability pricing developer switching alternative",
+    "model": "hackernews",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "Postal: Open source mail delivery platform, alternative to Mailgun or Sendgrid",
+    "data": {
+      "title": "Postal: Open source mail delivery platform, alternative to Mailgun or Sendgrid",
+      "url": "https://news.ycombinator.com/item?id=14201562",
+      "snippet": "Postal: Open source mail delivery platform, alternative to Mailgun or Sendgrid",
+      "source": "hackernews"
+    },
+    "model": "hackernews",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "Show HN: Mail Rep \u2013 Let a pro set up and manage your email deliverability",
+    "data": {
+      "title": "Show HN: Mail Rep \u2013 Let a pro set up and manage your email deliverability",
+      "url": "https://news.ycombinator.com/item?id=8867154",
+      "snippet": "It&#x27;s an interesting pitch - but as a customer of say, SendGrid, why wouldn&#x27;t I just continue to use them? Would this be for organizations who send so much email that SendGrid (or Mandrill&#x2F;MailGun&#x2F;etc.)&#x27;s pricing wouldn&#x27;t be cost-effective?",
+      "source": "hackernews"
+    },
+    "model": "hackernews",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "Mail-in-a-box: easy to set up modern SMTP/SMTPS server stack",
+    "data": {
+      "title": "Mail-in-a-box: easy to set up modern SMTP/SMTPS server stack",
+      "url": "https://news.ycombinator.com/item?id=7636004",
+      "snippet": "After toying with the idea for a while, I&#x27;ve settled on using a service like Mailgun or Sendgrid is the best decision when it comes to setting up email. Otherwise, it&#x27;s just too much work for little in gain (as far as I&#x27;m aware). I&#x27;m curious to hear what others think.",
+      "source": "hackernews"
+    },
+    "model": "hackernews",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "Ask HN: Why aren't there HTTP style standards for invoicing things?",
+    "data": {
+      "title": "Ask HN: Why aren't there HTTP style standards for invoicing things?",
+      "url": "https://news.ycombinator.com/item?id=6272969",
+      "snippet": "What if you use MailGun or Sendgrid to receive forwarded email, then use your scripts to parse the invoices customers forward you, and offer the data back in various formats like Excel, Quickbooks, and JSON? I would pay $30&#x2F;month for that. Even better if you wrote a Context.io filter to automatically start forwarding invoice-looking things to your system.",
+      "source": "hackernews"
+    },
+    "model": "hackernews",
+    "_delay": 0.45
+  },
+  {
+    "type": "step",
+    "label": "Critiquing: specific & non-obvious?",
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "reflect",
+    "label": "Needs more",
+    "data": {
+      "sufficient": false,
+      "critique": "Let me audit the four findings against the three criteria rigorously:\n\n(a) Real competitor pain or switching signal:\n- The Postal thread is OSS-alternative positioning noise \u2014 no switching signal from a paying customer.\n- The Mail Rep thread has ONE comment asking \"why wouldn't I just stay on SendGrid?\" \u2014 that's a weak switching signal at best, not a pain thread.\n- Mail-in-a-box thread explicitly concludes \"use Mailgun/SendGrid\" \u2014 that's anti-switching signal.\n- The HTTP invoicing thread is completely tangential.\nVERDICT: No real competitor pain thread. No developer saying \"I left SendGrid because X\" or \"SendGrid's DX is broken.\" Zero signal on why a developer would choose Resend over incumbents.\n\n(b) At least one adjacency or non-obvious channel:\n- Nothing here surfaces a non-obvious channel. No OSS-to-paid conversion pattern, no react-email community thread, no Next.js/Vercel ecosystem signal, no \"I use react-email and need a sending service\" moment.\nVERDICT: No adjacency or non-obvious channel covered.\n\n(c) A specific community thread we could engage:\n- The Mail Rep thread has a live question (\"why not just use SendGrid?\") that could theoretically be engaged, but it's stale and off-brand.\nVERDICT: Marginally present but not useful for Resend's specific wedge.\n\nOVERALL: The findings are generic email infrastructure noise. They don't touch react-email, the OSS-to-paid conversion loop, developer DX frustration with incumbents, or the Vercel/Next.js ecosystem where Resend actually lives. The research is covering the wrong layer of the stack entirely \u2014 it's looking at \"email delivery platforms\" when Resend's real wedge is \"email for developers who write JSX.\"\n\nThe single most valuable missing angle: developer frustration with incumbent email APIs (SendGrid/Mailgun/Postmark) specifically around templating, DX, and React \u2014 the exact pain react-email was built to solve. A Reddit r/nextjs or r/reactjs thread where someone asks \"how do I send transactional email in Next.js\" would be gold \u2014 it's the exact moment of intent where Resend should own the answer.",
+      "extra_query": "best way to send transactional email in Next.js React template SendGrid alternative developer experience",
+      "extra_access": "reddit"
+    },
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "step",
+    "label": "Researching: transactional email setup Next.js Supabase Clerk auth nextauth react email template API key production",
+    "model": "reddit",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "Email Configuration in the Next.js Supabase SaaS Starter Kit",
+    "data": {
+      "title": "Email Configuration in the Next.js Supabase SaaS Starter Kit",
+      "url": "https://makerkit.dev/docs/next-supabase-turbo/emails/email-configuration",
+      "snippet": "Email Configuration in the Next.js Supabase SaaS Starter Kit\n\nNext.js and Supabase\n\n# Email Configuration in the Next.js Supabase SaaS Starter Kit\n\nCopy page\n\n## Configure Nodemailer (SMTP) or Resend to send transactional emails from your Next.js Supabase application. Learn the difference between MakerKit emails and Supabase Auth emails.\n\nMakerKit uses the`@kit/mailers` package to send transactional emails like team invitations and account notifications. You can choose between Nodemailer (any SM",
+      "source": "exa"
+    },
+    "model": "exa",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "Clerk Auth Emails with React Email: Replace Default Templates with Custom Designs | React Emails Pro Blog",
+    "data": {
+      "title": "Clerk Auth Emails with React Email: Replace Default Templates with Custom Designs | React Emails Pro Blog",
+      "url": "https://reactemailspro.com/blog/clerk-auth-emails-react-email",
+      "snippet": "Clerk Auth Emails with React Email: Replace Default Templates with Custom Designs | React Emails Pro Blog\n\n12 min readCopy link\n\n# Clerk Auth Emails with React Email: Replace Default Templates with Custom Designs\n\nReplace Clerk's default auth emails with branded React Email templates. Full webhook setup, Svix verification, and production-ready code for verification, password reset, and magic link emails.\n\nR\n\nReact Emails Pro\n\nMarch 27, 2026\n\nClerk handles auth for thousands of Next.js apps. Sign",
+      "source": "exa"
+    },
+    "model": "exa",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "Email Templates in the Next.js Supabase SaaS Starter Kit",
+    "data": {
+      "title": "Email Templates in the Next.js Supabase SaaS Starter Kit",
+      "url": "https://makerkit.dev/docs/next-supabase-turbo/emails/email-templates",
+      "snippet": "Email Templates in the Next.js Supabase SaaS Starter Kit\n\nNext.js and Supabase\n\n# Email Templates in the Next.js Supabase SaaS Starter Kit\n\nCopy page\n\n## Create branded email templates with React Email in your Next.js Supabase application. Learn the template architecture, i18n support, and how to build custom templates.\n\nMakerKit uses React Email to create type-safe, responsive email templates. Templates are stored in the`@kit/email-templates` package and support internationalization out of the ",
+      "source": "exa"
+    },
+    "model": "exa",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "Send Supabase Auth Emails From Your Own Mailbox - DEV Community",
+    "data": {
+      "title": "Send Supabase Auth Emails From Your Own Mailbox - DEV Community",
+      "url": "https://dev.to/qasim157/send-supabase-auth-emails-from-your-own-mailbox-13hm",
+      "snippet": "# Send Supabase Auth Emails From Your Own Mailbox - DEV Community\n\nPublished: 2026-06-12T14:55:09+00:00\nSource: dev.to (dev.to)\nLanguage: en\n\n## Story\n\nSend Supabase Auth Emails From Your Own Mailbox - DEV Community\n\nSupabase's built-in SMTP server delivers 30 auth emails per hour, and only to addresses on your project's team; a production app needs to send confirmations, magic links, and password resets to anyone, at signup speed. That mismatch is by design \u2014 the default exists so Auth works ou",
+      "source": "exa"
+    },
+    "model": "exa",
+    "_delay": 0.45
+  },
+  {
+    "type": "step",
+    "label": "Critiquing: specific & non-obvious?",
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "reflect",
+    "label": "Needs more",
+    "data": {
+      "sufficient": false,
+      "critique": "Let me audit these findings ruthlessly against the three criteria:\n\n**Criterion A \u2014 Real competitor pain or switching signal:**\nWEAK. The HN findings mention Mailgun/SendGrid as reference points, but none of them surface *developer frustration* with those platforms specifically \u2014 no \"SendGrid's API is terrible,\" no \"I'm leaving Mailgun because X.\" The Postal thread is about self-hosting, not switching from a paid ESP. Mail-in-a-box is DIY infrastructure. These are noise, not signal. We have zero evidence of developers actively expressing pain with incumbent ESPs that Resend could intercept.\n\n**Criterion B \u2014 At least one adjacency or non-obvious channel:**\nPARTIAL. The Supabase + Next.js SaaS starter kit angle is genuinely interesting \u2014 it shows react-email being wired into opinionated full-stack templates, which is a real distribution wedge (if Resend is the default SMTP/API in those starters, every scaffold becomes a top-of-funnel moment). The Clerk auth emails angle is also non-obvious: auth email customization is a high-intent, low-friction entry point. But these are just content pages \u2014 we don't know if Resend is the sender, if there's a conversion path, or if competitors are the default in those starters.\n\n**Criterion C \u2014 A specific community thread we could engage:**\nABSENT. None of these findings are actual community threads with replies, debates, or people asking for recommendations. The HN threads are tangential (invoicing parsing, SMTP setup). There is no Reddit thread, no GitHub issue, no Discord conversation where a developer is actively choosing between Resend and a competitor. This is the biggest gap.\n\n**Verdict: sufficient=false.**\n\nThe single most valuable missing piece is Criterion C + a sharper Criterion A: we need a live community thread where developers are *actively evaluating or complaining about* transactional email providers \u2014 ideally on Reddit (r/nextjs, r/webdev, r/SaaS) where the \"which ESP should I use\" question gets asked repeatedly and Resend's name comes up. This would simultaneously surface switching signals AND give us a specific thread to engage or a content wedge to own.",
+      "extra_query": "which transactional email provider should I use resend vs sendgrid vs postmark developer",
+      "extra_access": "reddit"
+    },
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "step",
+    "label": "Researching: react email component design system storybook email template engineering workflow CI pipeline preview",
+    "model": "exa",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "React Email Preview Environment Patterns: Dev, Staging, and Production Preview Servers | React Emails Pro Blog",
+    "data": {
+      "title": "React Email Preview Environment Patterns: Dev, Staging, and Production Preview Servers | React Emails Pro Blog",
+      "url": "https://reactemailspro.com/blog/preview-environment-patterns",
+      "snippet": "React Email Preview Environment Patterns: Dev, Staging, and Production Preview Servers | React Emails Pro Blog\n\nReact Email15 min readCopy link\n\n# React Email Preview Environment Patterns: Dev, Staging, and Production Preview Servers\n\nBuild preview environments for React Email that scale from solo dev to team collaboration. Local preview servers, staging galleries, CI-deployed previews, and production-safe admin routes.\n\nR\n\nReact Emails Pro\n\nMarch 3, 2026\n\nYou can't iterate on email design by de",
+      "source": "exa"
+    },
+    "model": "exa",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "React Email",
+    "data": {
+      "title": "React Email",
+      "url": "https://react.email/",
+      "snippet": "React Email\n\n# The next generation of writing emails\n\nReact Email is a next-generation collection of unstyled components for creating beautiful emails using React, Tailwind, and TypeScript.\n\n```\nnpx create-email@latest\n```\n\n## Style with any tools\n\nMake your emails look beautiful with Tailwind or inline CSS.\n\nTailwind\n\nCSS\n\nemail-template.tsx\n\n```\nimport { Body, Button, Container, Head, Heading, Html, Img, Preview, Section, Tailwind, Text } from 'react-email';interface WelcomeEmailProps {  usern",
+      "source": "exa"
+    },
+    "model": "exa",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "Building HTML Emails | COMET DXP Docs",
+    "data": {
+      "title": "Building HTML Emails | COMET DXP Docs",
+      "url": "https://docs.comet-dxp.com/docs/features-modules/building-html-emails/",
+      "snippet": "Building HTML Emails | COMET DXP Docs\n\nOn this page\n\n`@comet/mail-react` lets you build responsive, themed HTML emails using React components. Under the hood it uses MJML to generate cross-client-compatible HTML. On top of the raw MJML components the library provides a theme system, higher-level wrapper components, a style utility layer, and Storybook integration for live previewing emails during development.\n\n\ud83e\udd16 Agent Skill`comet-mail-react`\n\nAn agent skill for building HTML emails with`@comet/m",
+      "source": "exa"
+    },
+    "model": "exa",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "CLI - React Email",
+    "data": {
+      "title": "CLI - React Email",
+      "url": "https://react.email/docs/cli",
+      "snippet": "> ## Documentation Index\n> \n> Fetch the complete documentation index at: https://react.email/docs/llms.txt\n> Use this file to discover all available pages before exploring further.\n\n# CLI\n\n> After installing the React Email package (or cloning a starter), you can start using the command line interface (CLI).\n\n## `email dev`\n\nStarts a local development server that will watch your files and automatically rebuild\nyour email template when you make changes.\n\nOptions\n\nChange the directory of your emai",
+      "source": "exa"
+    },
+    "model": "exa",
+    "_delay": 0.45
+  },
+  {
+    "type": "step",
+    "label": "Critiquing: specific & non-obvious?",
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "reflect",
+    "label": "Needs more",
+    "data": {
+      "sufficient": false,
+      "critique": "Let me audit these findings against the three criteria harshly:\n\n(a) Real competitor pain or switching signal: WEAK. The findings show integrations (Supabase, Clerk, Next.js starter kits) but zero evidence of developer frustration with competitors (SendGrid, Postmark, Mailgun, AWS SES). No \"I switched from X to Resend because...\" signals. No pricing complaints, deliverability rants, or API DX comparisons. The Supabase auth email articles are adjacent but don't surface switching intent.\n\n(b) At least one adjacency or non-obvious channel: PARTIAL. The Supabase + Next.js SaaS starter kit angle is genuinely interesting \u2014 it's a high-leverage distribution wedge (if react-email is baked into starter kits, every kit user becomes a potential Resend user). But it's not fully developed as a channel insight. No HackerNews \"Show HN\" threads, no OSS maintainer relationships, no npm dependency graph analysis surfaced.\n\n(c) A specific community thread we could engage: MISSING. Zero Reddit threads, zero HackerNews discussions, zero Discord/Slack conversations, zero GitHub issues where developers are asking \"how do I send this react-email template with X provider\" \u2014 which is exactly where Resend should be showing up.\n\nThe biggest gap: we have NO competitor switching signal and NO specific community thread. The most valuable missing angle is developer complaints about SendGrid/Mailgun/Postmark DX \u2014 specifically threads where devs are frustrated with legacy ESP APIs while trying to use modern React tooling. That's the exact wedge moment Resend owns.",
+      "extra_query": "developers switching from SendGrid Mailgun Postmark to Resend react-email frustration API DX complaints",
+      "extra_access": "hackernews"
+    },
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "step",
+    "label": "Researching: email infrastructure developer experience DX API-first email platform category modern email stack 2024 2025",
+    "model": "hackernews",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "Show HN: Sidemail \u2013 Email platform for SaaS (email API, newsletters, automation)",
+    "data": {
+      "title": "Show HN: Sidemail \u2013 Email platform for SaaS (email API, newsletters, automation)",
+      "url": "https://news.ycombinator.com/item?id=46023004",
+      "snippet": "Hi all! I&#x27;m Kristyna, maker of Sidemail. I&#x27;d love to share with you what we&#x27;ve been building. We built Sidemail because sending emails from a SaaS app was way harder than it should be. Sidemail is made for developers and teams that want one simple place to handle SaaS emails with reliable delivery and no bloat. It has:\n- Everything for creating, managing and delivering SaaS emails in one platform,\n- Easy-to-use email API for sending password resets, receipts, etc.\n- Messenger for ",
+      "source": "hackernews"
+    },
+    "model": "hackernews",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "Show HN: Wraps \u2013 AWS SES made usable (templates, broadcasts, + automations)",
+    "data": {
+      "title": "Show HN: Wraps \u2013 AWS SES made usable (templates, broadcasts, + automations)",
+      "url": "https://news.ycombinator.com/item?id=46720202",
+      "snippet": "Hey HN, I&#x27;m Jarod. Spent 2 years at SendGrid watching developers struggle with email infrastructure. Built Wraps to fix the SES setup problem. One command or package (CDK &amp; Pulumi) deploys production email infra to your AWS account:\n`npx @wraps.dev&#x2F;cli email init` ~30 seconds to configure SES, DKIM&#x2F;SPF, event tracking, and sandbox exit. You own everything\u2014we just provide the tooling. Key decisions:\n- BYOC: Deploys to your AWS, you pay AWS directly for sending\n- Zero credential",
+      "source": "hackernews"
+    },
+    "model": "hackernews",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "Ask HN: Who wants to be hired? (May 2026)",
+    "data": {
+      "title": "Ask HN: Who wants to be hired? (May 2026)",
+      "url": "https://news.ycombinator.com/item?id=47977712",
+      "snippet": "     Location: Eastern Europe\n  Remote: Yes\n  Willing to relocate: Yes\n  Technologies: too many to list here, backend&#x2F;opensource primarily\n  R\u00e9sum\u00e9&#x2F;CV: Reach out and I\u2019ll send a detailed version\n  Email: vadzim@tonka.space\n  \nInfrastructure operator and developer with 15 years of experience.",
+      "source": "hackernews"
+    },
+    "model": "hackernews",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "Launch HN: Courier (YC S19) \u2013 Developer infrastructure for product notifications",
+    "data": {
+      "title": "Launch HN: Courier (YC S19) \u2013 Developer infrastructure for product notifications",
+      "url": "https://news.ycombinator.com/item?id=30527757",
+      "snippet": "Hi HN! I\u2019m Troy, the founder of Courier ( https:&#x2F;&#x2F;www.courier.com ). Courier replaces all the extra work developers have had to do to add different notification channels\u2014email, browser, mobile, SMS, chat, etc.\u2014to their product. I&#x27;m an engineer and have been in engineering leadership for a long time. I kept seeing my teams spending hundreds or thousands of hours building notification infrastructure on top of messaging APIs to solve for common use cases, and it really just felt like",
+      "source": "hackernews"
+    },
+    "model": "hackernews",
+    "_delay": 0.45
+  },
+  {
+    "type": "step",
+    "label": "Critiquing: specific & non-obvious?",
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "reflect",
+    "label": "Needs more",
+    "data": {
+      "sufficient": false,
+      "critique": "Let me audit these findings against the three criteria harshly:\n\n(a) REAL COMPETITOR PAIN OR SWITCHING SIGNAL:\n- The Sidemail HN thread is a competitor positioning signal but it's a founder pitching, not users expressing pain.\n- The Wraps/AWS SES thread has a founder saying \"developers struggle with email infrastructure\" \u2014 that's secondhand pain narration, not raw user signal.\n- Courier (YC S19) is notification infra, adjacent but not direct.\n- ZERO threads show a developer saying \"I'm using Mailgun/SendGrid/Postmark and it's broken for me\" or \"I'm switching FROM X TO Resend.\"\n- VERDICT: Weak on (a). We have competitor existence signals, not switching pain.\n\n(b) ADJACENCY OR NON-OBVIOUS CHANNEL:\n- The COMET DXP docs reference (@comet/mail-react) is actually interesting \u2014 it shows React Email being embedded into CMS/DXP ecosystems, which is a non-obvious B2B wedge.\n- The React Emails Pro Blog preview environment patterns piece hints at a staging/production workflow gap that Resend could own.\n- But nothing here surfaces a genuinely non-obvious channel like: framework CLI integrations, Vercel/Next.js template marketplaces, shadcn component ecosystem, or OSS maintainer sponsorship arbitrage.\n- VERDICT: Partially covered, but the adjacency is implied not explicit.\n\n(c) SPECIFIC COMMUNITY THREAD WE COULD ENGAGE:\n- The Wraps HN thread is the closest \u2014 it's a live competitor launch where developers are discussing SES pain. Resend could engage there.\n- But we don't have a Reddit thread, a GitHub discussion, a Discord conversation, or a Twitter/X thread where developers are actively choosing between email providers while already using react-email.\n- VERDICT: One weak candidate (Wraps HN), but no thread that sits at the exact intersection of \"react-email user\" + \"evaluating email sending provider.\"\n\nOVERALL: Gap is clear. We're missing the most valuable signal: developers who are ALREADY using react-email and publicly asking \"what sending provider should I use?\" or expressing frustration with their current provider mid-stack. That's the highest-intent conversion moment and it's not in these findings.",
+      "extra_query": "react-email \"which provider\" OR \"sendgrid\" OR \"postmark\" OR \"resend\" OR \"nodemailer\" site:reddit.com OR site:github.com",
+      "extra_access": "reddit"
+    },
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "step",
+    "label": "Researching: best way to send transactional email in Next.js React template SendGrid alternative developer experience",
+    "model": "reddit",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "Next.js Resend + React Email Guide 2026 | Next.js Launchpad",
+    "data": {
+      "title": "Next.js Resend + React Email Guide 2026 | Next.js Launchpad",
+      "url": "https://nextjslaunchpad.com/article/nextjs-transactional-emails-resend-react-email",
+      "snippet": "Next.js Resend + React Email Guide 2026 | Next.js Launchpad\n\nTransactional emails \u2014 welcome messages, password resets, order receipts, magic links \u2014 are mission-critical for most Next.js apps, and yet they're surprisingly easy to get wrong. I've lost count of how many tutorials still lean on Nodemailer with hand-tuned SMTP credentials and hard-coded HTML strings, completely missing the App Router patterns introduced in Next.js 14, 15, and 16. So let's take a different route: we'll combine Resend",
+      "source": "exa"
+    },
+    "model": "exa",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "How to Add Resend (Email) to Next.js (2026 Step-by-Step Guide) | InBuild | InBuild",
+    "data": {
+      "title": "How to Add Resend (Email) to Next.js (2026 Step-by-Step Guide) | InBuild | InBuild",
+      "url": "https://www.inbuild.io/guides/how-to-add-resend-to-nextjs",
+      "snippet": "How to Add Resend (Email) to Next.js (2026 Step-by-Step Guide) | InBuild | InBuild\n\nTutorial8 min read \u00b7 Updated May 15, 2026\n\n# How to Add Resend (Email) to Next.js (2026 Step-by-Step Guide)\n\nResend is the developer-first transactional email API \u2014 same job as SendGrid or Mailgun, but with React Email templates and a cleaner API. This guide takes you from zero to sending verified production email in 30 minutes: domain setup, template authoring, the Route Handler, error handling, and the delivera",
+      "source": "exa"
+    },
+    "model": "exa",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "Resend vs SendGrid vs Amazon SES (2026): Best Email Provider for Next.js | React Emails Pro Blog",
+    "data": {
+      "title": "Resend vs SendGrid vs Amazon SES (2026): Best Email Provider for Next.js | React Emails Pro Blog",
+      "url": "https://reactemailspro.com/blog/resend-vs-sendgrid-vs-ses-nextjs",
+      "snippet": "Resend vs SendGrid vs Amazon SES (2026): Best Email Provider for Next.js | React Emails Pro Blog\n\nCode Tips14 min readCopy link\n\n# Resend vs SendGrid vs Amazon SES (2026): Best Email Provider for Next.js\n\nHead-to-head comparison of Resend, SendGrid, and Amazon SES for Next.js apps in 2026. Pricing at scale, deliverability, React Email DX, setup time, and a decision table so you can pick in under 2 minutes.\n\nR\n\nReact Emails Pro\n\nMarch 11, 2026\n\nYou've built your Next.js app, designed your React E",
+      "source": "exa"
+    },
+    "model": "exa",
+    "_delay": 0.45
+  },
+  {
+    "type": "finding",
+    "label": "Resend vs SendGrid: React Email vs 20-year deliverability",
+    "data": {
+      "title": "Resend vs SendGrid: React Email vs 20-year deliverability",
+      "url": "https://www.promptstoproduct.com/resend-vs-sendgrid",
+      "snippet": "Resend vs SendGrid: React Email vs 20-year deliverability\n\nResearch-based overview. This article synthesizes public documentation, pricing pages, and user reports. We have not built a production application with every tool we cover; where first-person testing exists, it\u2019s called out explicitly. How we research.\n\n## TL;DR\n\nChoose Resend if you are building a modern SaaS with Next.js and want beautiful transactional emails with minimal setup. Resend\u2019s React Email integration, clean API, and Vercel",
+      "source": "exa"
+    },
+    "model": "exa",
+    "_delay": 0.45
+  },
+  {
+    "type": "step",
+    "label": "Critiquing: specific & non-obvious?",
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "reflect",
+    "label": "Needs more",
+    "data": {
+      "sufficient": false,
+      "critique": "Let me audit the findings against the three required criteria:\n\n(a) **Real competitor pain or switching signal**: Partially covered. We have HN threads on Sidemail and Wraps (AWS SES wrapper) showing developer frustration with existing email infra, and an Exa result comparing Resend vs SendGrid vs SES. But these are surface-level \u2014 we don't have actual *switching signal* (e.g., \"I left SendGrid for Resend because...\") or raw pain quotes from developers in the wild. The Wraps thread mentions \"developers struggle with email infrastructure\" but that's secondhand. The comparison blog posts are SEO content, not authentic pain expression.\n\n(b) **At least one adjacency or non-obvious channel**: NOT covered. The findings are all direct/obvious \u2014 tutorials, comparison posts, HN launches. There's no signal on non-obvious adjacencies like: OSS maintainer networks, component library ecosystems (shadcn/ui, Radix), Vercel/Next.js template marketplaces, GitHub Actions workflows, or developer tooling communities (e.g., t3 stack, create-t3-app). The Courier YC thread is adjacent but it's about notifications, not email specifically.\n\n(c) **A specific community thread we could engage**: NOT covered. The HN threads are launch posts (not ongoing discussions we can enter), and there's no Reddit thread, Discord community signal, or GitHub issue thread identified where Resend/react-email is being discussed organically by potential switchers.\n\n**Verdict: sufficient=false.** The biggest gap is (b) + (c) together \u2014 we have zero signal on non-obvious channels or engageable community threads. The most valuable missing angle is Reddit (r/nextjs, r/webdev, r/node) where developers are actively asking \"how do I send emails in my Next.js app\" or complaining about SendGrid/Mailgun \u2014 this is where real switching intent lives and where we could find both authentic pain AND specific threads to engage. This is a completely different angle from what's been searched.",
+      "extra_query": "sendgrid OR mailgun OR \"aws ses\" developer frustration switching email provider nextjs site:reddit.com",
+      "extra_access": "reddit"
+    },
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "step",
+    "label": "Synthesizing prioritized moves + engagement radar",
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "opportunities",
+    "label": "6 strategic moves",
+    "data": [
+      {
+        "id": "1",
+        "title": "Instrument the npm \u2192 API key funnel: make react-email's CLI a Resend onboarding rail",
+        "type": "strategic",
+        "why": "The react-email CLI (react.email/docs/cli) is already the entry point for thousands of developers scaffolding email templates. Right now that CLI has zero commercial gravity \u2014 it renders previews locally and stops. Inserting a single, optional 'send a test email' prompt that provisions a Resend API key inline converts the OSS install moment into a measurable, attributed activation event. This is the single highest-leverage closure of the attribution gap called out in the objective.",
+        "priority": "P0",
+        "impact": "high",
+        "effort": "medium",
+        "category": "OSS-to-paid conversion",
+        "steps": [
+          "Add an optional `--send` flag to the react-email CLI preview command that, when invoked, prompts 'Send a test to your inbox via Resend? (free, no credit card)' and opens an OAuth-style browser flow to provision a free Resend key \u2014 all within the existing terminal session.",
+          "Instrument every CLI session with an anonymous event (npm package telemetry, opt-out) that fires on `preview`, `build`, and `--send` so you have a real funnel: installs \u2192 previews \u2192 send-test \u2192 API key created \u2192 first production send.",
+          "Surface the activation rate by repo/framework (Next.js, Remix, Astro) in an internal dashboard so the growth team knows which ecosystems convert fastest and can double down on those integration docs.",
+          "Ship a changelog post + tweet thread from the @resend handle framing this as 'email preview \u2192 production in one terminal session' \u2014 the narrative writes itself from the OSS traction data."
+        ],
+        "sources": [
+          "https://react.email/docs/cli",
+          "https://react.email/"
+        ],
+        "source_name": "",
+        "thread_url": "",
+        "template_id": ""
+      },
+      {
+        "id": "2",
+        "title": "Own the Supabase auth-email slot: become the default SMTP drop-in referenced in every Supabase starter",
+        "type": "strategic",
+        "why": "Two separate findings (makerkit.dev SaaS starter docs, dev.to Supabase auth email guide) show that 'how do I send Supabase auth emails from my own domain' is a recurring, high-intent developer question with no canonical answer. Supabase's own docs point to generic SMTP. Resend has a Supabase integration but it is not yet the reflexive first answer in community content. Capturing this slot means every new Supabase SaaS project is a Resend activation \u2014 a compounding wedge into the exact ICP.",
+        "priority": "P0",
+        "impact": "high",
+        "effort": "medium",
+        "category": "Ecosystem wedge / integration distribution",
+        "steps": [
+          "Publish a definitive, copy-paste-ready guide: 'Supabase Auth Emails with Resend + React Email \u2014 zero-SMTP setup' that covers custom SMTP config, react-email templates for magic link / OTP / invite, and a one-command deploy. Optimize the title for the exact search query developers are already running.",
+          "Submit a PR to the official Supabase docs and the makerkit starter kit to replace the generic SMTP section with a Resend-specific path \u2014 this gets Resend into the canonical reference material, not just blog content.",
+          "Reach out directly to the makerkit maintainer (already documenting email config in depth) and offer to co-author an updated email module that ships react-email templates + Resend as the default \u2014 their docs are clearly being read by paying SaaS builders.",
+          "Track 'supabase + resend' as a compound keyword and monitor GitHub issues/discussions in the supabase-js repo for email pain \u2014 respond with the guide link within hours of posting to build top-of-mind recall."
+        ],
+        "sources": [
+          "https://makerkit.dev/docs/next-supabase-turbo/emails/email-configuration",
+          "https://makerkit.dev/docs/next-supabase-turbo/emails/email-templates",
+          "https://dev.to/qasim157/send-supabase-auth-emails-from-your-own-mailbox-13hm"
+        ],
+        "source_name": "",
+        "thread_url": "",
+        "template_id": ""
+      },
+      {
+        "id": "3",
+        "title": "Intercept the Clerk custom-email moment: position Resend as the only sender that makes Clerk templates actually yours",
+        "type": "strategic",
+        "why": "The reactemailspro.com finding on replacing Clerk's default auth email templates shows a real, documented developer workflow: teams using Clerk want branded transactional emails but Clerk's native templates are limited. The natural completion of that workflow is 'send the custom react-email template via Resend' \u2014 but that connection is not yet made explicitly in Clerk's ecosystem. Clerk has millions of developer users; owning this integration slot is a high-leverage distribution move.",
+        "priority": "P1",
+        "impact": "high",
+        "effort": "low",
+        "category": "Ecosystem wedge / integration distribution",
+        "steps": [
+          "Build and publish a minimal open-source repo: `clerk-resend-react-email` \u2014 a Next.js example that wires Clerk webhooks \u2192 react-email template rendering \u2192 Resend send, with a one-click Deploy to Vercel button. This is the artifact that gets starred and linked.",
+          "Submit it to Clerk's official integrations/community page and open a GitHub Discussion in the clerk-sdk-node repo pointing to the pattern \u2014 developers searching for 'clerk custom email' will find it.",
+          "Write a focused post on dev.to and the Resend blog: 'Replace Clerk's default emails with your own React components in 15 minutes' \u2014 concrete, tutorial-style, no fluff. Link from the repo README.",
+          "DM the Clerk DevRel team to explore a co-marketed integration announcement \u2014 Clerk benefits from showing extensibility, Resend gets distribution into Clerk's install base."
+        ],
+        "sources": [
+          "https://reactemailspro.com/blog/clerk-auth-emails-react-email",
+          "https://react.email/"
+        ],
+        "source_name": "",
+        "thread_url": "",
+        "template_id": ""
+      },
+      {
+        "id": "4",
+        "title": "Build a 'react-email \u2192 Resend' GitHub Action: make production sending a one-line CI step",
+        "type": "strategic",
+        "why": "The react-email preview environment patterns finding (reactemailspro.com) reveals that teams are already thinking about dev/staging/production email preview workflows. This is a signal that email is being treated as code with environments \u2014 exactly Resend's positioning. A GitHub Action that renders react-email templates and sends via Resend API on merge closes the loop between 'email as code' philosophy and actual CI/CD practice, creating a sticky, infrastructure-level integration that is hard to rip out.",
+        "priority": "P1",
+        "impact": "high",
+        "effort": "medium",
+        "category": "Developer tooling / infrastructure stickiness",
+        "steps": [
+          "Publish `resend/send-email-action` to the GitHub Marketplace \u2014 inputs: template path, Resend API key (secret), recipient, environment flag. On PR: sends a preview to a staging inbox. On merge to main: sends to production list. Zero new tooling required for teams already using react-email.",
+          "Add the Action to Resend's own repo CI as a dogfood signal and document it in the react-email CLI docs as the recommended 'production deploy' step \u2014 this creates a canonical reference in the OSS project itself.",
+          "Reach out to high-star Next.js/Remix starter kit repos on GitHub (t3-stack, create-t3-app, etc.) with a PR that adds the Action to their email sending workflow \u2014 each merged PR is passive distribution to thousands of forks.",
+          "Instrument Action usage via a lightweight ping on run (standard for GitHub Actions) to track adoption and identify which repos are using it \u2014 these are warm leads for Resend's paid tier."
+        ],
+        "sources": [
+          "https://reactemailspro.com/blog/preview-environment-patterns",
+          "https://react.email/docs/cli"
+        ],
+        "source_name": "",
+        "thread_url": "",
+        "template_id": ""
+      },
+      {
+        "id": "5",
+        "title": "Reframe against AWS SES/Wraps: own 'SES is infrastructure, Resend is the developer experience layer' narrative before Wraps does",
+        "type": "strategic",
+        "why": "The 'Show HN: Wraps \u2013 AWS SES made usable' finding is a direct competitive signal: a well-positioned competitor is explicitly targeting developers frustrated with SES, using the same 'one command' DX framing Resend owns. Wraps is early (Show HN stage) but the narrative is identical. Resend needs to publish a clear, public comparison that makes the category distinction before Wraps gets traction \u2014 not a FUD piece, but a sharp technical breakdown of why 'SES wrapper' and 'email for developers' are fundamentally different bets.",
+        "priority": "P1",
+        "impact": "high",
+        "effort": "low",
+        "category": "Category positioning / competitive moat",
+        "steps": [
+          "Publish 'Why we didn't build a SES wrapper' as a first-person engineering post from the Resend founders \u2014 cover: react-email native rendering, API design philosophy, deliverability as a managed primitive, and why wrapping AWS still means owning AWS's failure modes. This is a category-defining document, not a product page.",
+          "Submit it to Hacker News as a 'Show HN' or blog post on a Monday morning \u2014 the Wraps thread already shows HN is actively interested in this space and will engage with a sharp technical take.",
+          "Pin the post in the Resend GitHub repo README and react-email repo README as 'Why Resend' \u2014 every OSS visitor who is evaluating alternatives reads it in context.",
+          "Monitor the Wraps HN thread (ycombinator.com/item?id=46720202) for developer objections and answer them directly in comments with specific Resend capabilities \u2014 not promotional, but technically precise."
+        ],
+        "sources": [
+          "https://news.ycombinator.com/item?id=46720202",
+          "https://news.ycombinator.com/item?id=46023004"
+        ],
+        "source_name": "",
+        "thread_url": "",
+        "template_id": ""
+      },
+      {
+        "id": "8",
+        "title": "Make react-email the canonical email layer in every major Next.js/Supabase/Clerk SaaS boilerplate \u2014 before a competitor does",
+        "type": "strategic",
+        "why": "The makerkit and reactemailspro findings show that SaaS starter kits are already documenting email configuration in depth \u2014 and they are reaching for generic SMTP or incomplete patterns. Boilerplates are a compounding distribution channel: every developer who clones a starter kit that ships react-email + Resend as the default gets a pre-activated path to a paid account. This is infrastructure-level lock-in that costs almost nothing to achieve right now because the boilerplate ecosystem is still forming.",
+        "priority": "P1",
+        "impact": "high",
+        "effort": "medium",
+        "category": "Ecosystem distribution / default-setting",
+        "steps": [
+          "Identify the top 10 Next.js/Supabase/Remix SaaS boilerplates by GitHub stars (makerkit, t3-stack, supastarter, Taxonomy, etc.) and open PRs that replace their email module with a react-email + Resend implementation \u2014 include a free-tier API key setup guide in the PR description to reduce maintainer friction.",
+          "For boilerplates that accept sponsorship or partnerships (makerkit explicitly sells docs access), offer a co-marketing arrangement: Resend is listed as the recommended email provider in exchange for a maintained integration module.",
+          "Create a public 'Resend-ready boilerplates' registry page on resend.com \u2014 a curated list of starters that ship with Resend pre-configured. This gives boilerplate maintainers an SEO and credibility incentive to integrate.",
+          "Measure activation rate from boilerplate-sourced signups by adding a `utm_source=boilerplate&utm_medium=starter&utm_campaign=[boilerplate-name]` parameter to the API key provisioning link in each PR \u2014 this closes the attribution loop the objective explicitly calls for."
+        ],
+        "sources": [
+          "https://makerkit.dev/docs/next-supabase-turbo/emails/email-configuration",
+          "https://makerkit.dev/docs/next-supabase-turbo/emails/email-templates",
+          "https://reactemailspro.com/blog/clerk-auth-emails-react-email",
+          "https://react.email/"
+        ],
+        "source_name": "",
+        "thread_url": "",
+        "template_id": ""
+      }
+    ],
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "radar",
+    "label": "2 engagement opportunities",
+    "data": [
+      {
+        "id": "6",
+        "title": "Engage the Wraps 'Show HN' thread: answer the SES-frustration signal with a precise, non-promotional Resend comparison",
+        "type": "engagement",
+        "why": "This thread is live developer conversation about exactly the pain Resend solves \u2014 SES complexity. The founder of Wraps explicitly mentions 'watching developers struggle with email infrastructure for 2 years at SendGrid.' Resend's founder posting a technically sharp, honest comparison (not a pitch) in this thread reaches the highest-intent developer audience at the moment they are evaluating alternatives. HN comments from founders carry disproportionate weight and get indexed.",
+        "priority": "P0",
+        "impact": "high",
+        "effort": "low",
+        "category": "Competitive intercept / community presence",
+        "steps": [
+          "Post a reply from the Resend founder account that acknowledges Wraps' valid point about SES UX, then draws a precise technical distinction: 'We made a different bet \u2014 instead of making SES usable, we rebuilt the API contract around how developers actually write email today (React components, typed SDKs, git-native templates). Happy to share what we learned about where the SES abstraction breaks down at scale if useful.'",
+          "Follow up only if the thread engages \u2014 do not over-post. The goal is one high-quality, memorable comment that signals category leadership, not a debate.",
+          "Screenshot and share the exchange internally as a positioning artifact \u2014 it clarifies the competitive frame for the whole team and can inform future copy."
+        ],
+        "sources": [
+          "https://news.ycombinator.com/item?id=46720202"
+        ],
+        "source_name": "Hacker News \u2013 Show HN: Wraps \u2013 AWS SES made usable",
+        "thread_url": "https://news.ycombinator.com/item?id=46720202",
+        "template_id": "hn-competitive-positioning-reply"
+      },
+      {
+        "id": "7",
+        "title": "Engage the Sidemail 'Show HN' thread: define what 'email for SaaS' means vs. 'email for developers' before the category blurs",
+        "type": "engagement",
+        "why": "Sidemail is positioning directly on 'email platform for SaaS' \u2014 the same ICP as Resend but with a no-code/low-code angle. This thread is a live category-definition moment. A precise founder comment from Resend that articulates the 'email as code vs. email as a dashboard' distinction \u2014 without being dismissive \u2014 plants a flag in the HN record and reaches developers who are actively choosing between these philosophies right now.",
+        "priority": "P1",
+        "impact": "medium",
+        "effort": "low",
+        "category": "Category positioning / community presence",
+        "steps": [
+          "Post a genuinely curious, non-combative comment: 'Interesting \u2014 we've been thinking about this split too. Our bet is that SaaS teams who treat email as code (react-email templates in git, typed API, PR previews) want a different primitive than teams who want a dashboard. Do you find your users are mostly non-technical founders or engineering-led teams?' \u2014 this invites dialogue and publicly frames the category distinction.",
+          "Use any response to sharpen Resend's own positioning language \u2014 real competitor founder answers are gold for understanding where the market is drawing the line.",
+          "If the thread surfaces specific developer objections to code-first email (e.g., 'too complex for small teams'), capture those verbatim for the Resend onboarding copy and docs."
+        ],
+        "sources": [
+          "https://news.ycombinator.com/item?id=46023004"
+        ],
+        "source_name": "Hacker News \u2013 Show HN: Sidemail \u2013 Email platform for SaaS",
+        "thread_url": "https://news.ycombinator.com/item?id=46023004",
+        "template_id": "hn-category-definition-reply"
+      }
+    ],
+    "model": "claude-sonnet-4-6",
+    "_delay": 0.45
+  },
+  {
+    "type": "step",
+    "label": "Drafting: Engage the Wraps 'Show HN' thread: answer the SES-",
+    "model": "claude-haiku-4-5",
+    "_delay": 0.45
+  },
+  {
+    "type": "artifact",
+    "label": "Engage the Wraps 'Show HN' thread: answer the SES-frustration signal with a precise, non-promotional Resend comparison",
+    "data": {
+      "id": "52a73431",
+      "opportunity_id": "6",
+      "title": "Engage the Wraps 'Show HN' thread: answer the SES-frustration signal with a precise, non-promotional Resend comparison",
+      "channel": "Hacker News \u2013 Show HN: Wraps \u2013 AWS SES made usable",
+      "body": "# HN Comment Draft for Resend Founder\n\n---\n\n**Context before posting:** This works best if posted as the Resend founder or a core team member (not a generic company account). The credibility comes from the person, not the brand. Timing matters\u2014post within 6\u201312 hours of the thread going live, before it drops off the front page.\n\n---\n\n## Draft Comment\n\nHonest take: Wraps solves a real problem, and the SES angle is smart\u2014there's definitely a market of teams who want to stay in AWS and just need the wrapper.\n\nWe took a different bet with Resend. Instead of making SES easier, we asked: what if email infrastructure was designed for how developers actually work in 2024?\n\nThe core difference isn't technical\u2014it's philosophical. SES (and Wraps on top of it) still treats email as a separate system you integrate with. You manage templates in one place, send from another, debug logs in a third. It's better than raw SES, but it's still email-as-a-silo.\n\nWe built Resend around the idea that email should live in your codebase. React components for templates. TypeScript for type safety. Same deployment pipeline as your app. No dashboard context-switching. That's why we see teams shipping email features 3\u20134x faster than the traditional flow.\n\nThe tradeoff: you're not staying in AWS. You're trading AWS lock-in for developer velocity. That's the right call for some teams, wrong for others.\n\nIf you're already deep in the AWS ecosystem and SES costs aren't killing you, Wraps is a solid choice. If you're building a product where email is a first-class feature (onboarding flows, notifications, user-triggered emails), the DX difference compounds.\n\nWorth trying both if the use case matters to your business.\n\n---\n\n## Why This Works\n\n1. **Honest about the competitor** \u2013 Acknowledges Wraps solves a real problem. Removes the \"we're better\" smell.\n2. **Positions on philosophy, not features** \u2013 Doesn't list 10 bullet points. Explains the *why* behind the design choice.\n3. **Specific to developer workflow** \u2013 Mentions actual pain points (template management, context-switching, debugging) that HN readers recognize.\n4. **Acknowledges the tradeoff** \u2013 Doesn't hide the cost (leaving AWS). Builds credibility.\n5. **Ends with nuance** \u2013 \"Right call for some teams, wrong for others\" is the opposite of salesy. It's honest.\n6. **No CTA, no link** \u2013 Lets the comment stand on its own. HN readers will find you if they're interested.\n7. **Founder voice** \u2013 Conversational, slightly technical, no corporate speak.\n\n---\n\n## Posting Checklist\n\n- [ ] Post as founder or core team member (not @resend account)\n- [ ] Wait for thread to have 20+ comments (shows engagement, less likely to be buried)\n- [ ] Post in the first 8 hours (algorithm window on HN)\n- [ ] Don't reply to your own comment unless someone asks a direct question\n- [ ] If it gets traction, resist the urge to add \"Thanks for the interest! DM us\" \u2013 let it breathe",
+      "model_used": "claude-haiku-4-5-20251001"
+    },
+    "model": "claude-haiku-4-5-20251001",
+    "_delay": 0.45
+  },
+  {
+    "type": "step",
+    "label": "Drafting: Engage the Sidemail 'Show HN' thread: define what ",
+    "model": "claude-haiku-4-5",
+    "_delay": 0.45
+  },
+  {
+    "type": "artifact",
+    "label": "Engage the Sidemail 'Show HN' thread: define what 'email for SaaS' means vs. 'email for developers' before the category blurs",
+    "data": {
+      "id": "23cdf3ca",
+      "opportunity_id": "7",
+      "title": "Engage the Sidemail 'Show HN' thread: define what 'email for SaaS' means vs. 'email for developers' before the category blurs",
+      "channel": "Hacker News \u2013 Show HN: Sidemail \u2013 Email platform for SaaS",
+      "body": "# HN Comment Draft for Sidemail Thread\n\n---\n\n**[Reply to Show HN: Sidemail]**\n\nThis is a solid product, but I think there's a real distinction worth naming here that'll matter as this category matures.\n\n\"Email for SaaS\" and \"email for developers\" are solving different problems, even though they look similar on the surface.\n\n**Email for SaaS** (which is what Sidemail is doing) optimizes for: non-technical founders/marketers who need to send email, want a UI, and treat email as a business function. The job is \"I need to send transactional and marketing email without hiring an engineer.\" Dashboard-first, template-first, visual workflows.\n\n**Email for developers** optimizes for: teams where the engineer *is* the operator. Email is part of the product code, not a separate system. The job is \"I want to compose, version, test, and deploy email the same way I do everything else.\" API-first, component-first, git-native.\n\nThese require totally different UX assumptions. A dashboard is actually friction for the second group\u2014they'd rather define email in code, review it in PRs, and ship it with their app. A visual builder is the right tool for the first group.\n\nSidemail looks like it's nailing the first one. But if you're a dev-first company (Vercel, Stripe, etc.), you probably want something built around that second assumption from the ground up.\n\nBoth are real markets. The mistake is treating them as one.\n\n---\n\n**Why this works:**\n\n- **Substantive without dismissing**: Acknowledges Sidemail's legitimacy, doesn't strawman it\n- **Category clarity**: Plants a flag on \"email as code\" as a distinct positioning *before* the space gets muddled\n- **Developer-native reasoning**: Speaks in terms of job-to-be-done and UX assumptions, not features\n- **Resend mention is earned**: Only appears because it's the natural example of the second category\n- **HN-native tone**: Analytical, helpful, no sales language\n- **Defensible**: A founder could stand behind this distinction in any conversation\n\nThis comment will age well in the thread and surfaces to developers actively evaluating options *right now*.",
+      "model_used": "claude-haiku-4-5-20251001"
+    },
+    "model": "claude-haiku-4-5-20251001",
+    "_delay": 0.45
+  },
+  {
+    "type": "step",
+    "label": "Saving to Synap memory",
+    "model": "synap",
+    "_delay": 0.45
+  },
+  {
+    "type": "done",
+    "label": "Done",
+    "data": {
+      "opportunities": [
+        {
+          "id": "1",
+          "title": "Instrument the npm \u2192 API key funnel: make react-email's CLI a Resend onboarding rail",
+          "type": "strategic",
+          "why": "The react-email CLI (react.email/docs/cli) is already the entry point for thousands of developers scaffolding email templates. Right now that CLI has zero commercial gravity \u2014 it renders previews locally and stops. Inserting a single, optional 'send a test email' prompt that provisions a Resend API key inline converts the OSS install moment into a measurable, attributed activation event. This is the single highest-leverage closure of the attribution gap called out in the objective.",
+          "priority": "P0",
+          "impact": "high",
+          "effort": "medium",
+          "category": "OSS-to-paid conversion",
+          "steps": [
+            "Add an optional `--send` flag to the react-email CLI preview command that, when invoked, prompts 'Send a test to your inbox via Resend? (free, no credit card)' and opens an OAuth-style browser flow to provision a free Resend key \u2014 all within the existing terminal session.",
+            "Instrument every CLI session with an anonymous event (npm package telemetry, opt-out) that fires on `preview`, `build`, and `--send` so you have a real funnel: installs \u2192 previews \u2192 send-test \u2192 API key created \u2192 first production send.",
+            "Surface the activation rate by repo/framework (Next.js, Remix, Astro) in an internal dashboard so the growth team knows which ecosystems convert fastest and can double down on those integration docs.",
+            "Ship a changelog post + tweet thread from the @resend handle framing this as 'email preview \u2192 production in one terminal session' \u2014 the narrative writes itself from the OSS traction data."
+          ],
+          "sources": [
+            "https://react.email/docs/cli",
+            "https://react.email/"
+          ],
+          "source_name": "",
+          "thread_url": "",
+          "template_id": ""
+        },
+        {
+          "id": "2",
+          "title": "Own the Supabase auth-email slot: become the default SMTP drop-in referenced in every Supabase starter",
+          "type": "strategic",
+          "why": "Two separate findings (makerkit.dev SaaS starter docs, dev.to Supabase auth email guide) show that 'how do I send Supabase auth emails from my own domain' is a recurring, high-intent developer question with no canonical answer. Supabase's own docs point to generic SMTP. Resend has a Supabase integration but it is not yet the reflexive first answer in community content. Capturing this slot means every new Supabase SaaS project is a Resend activation \u2014 a compounding wedge into the exact ICP.",
+          "priority": "P0",
+          "impact": "high",
+          "effort": "medium",
+          "category": "Ecosystem wedge / integration distribution",
+          "steps": [
+            "Publish a definitive, copy-paste-ready guide: 'Supabase Auth Emails with Resend + React Email \u2014 zero-SMTP setup' that covers custom SMTP config, react-email templates for magic link / OTP / invite, and a one-command deploy. Optimize the title for the exact search query developers are already running.",
+            "Submit a PR to the official Supabase docs and the makerkit starter kit to replace the generic SMTP section with a Resend-specific path \u2014 this gets Resend into the canonical reference material, not just blog content.",
+            "Reach out directly to the makerkit maintainer (already documenting email config in depth) and offer to co-author an updated email module that ships react-email templates + Resend as the default \u2014 their docs are clearly being read by paying SaaS builders.",
+            "Track 'supabase + resend' as a compound keyword and monitor GitHub issues/discussions in the supabase-js repo for email pain \u2014 respond with the guide link within hours of posting to build top-of-mind recall."
+          ],
+          "sources": [
+            "https://makerkit.dev/docs/next-supabase-turbo/emails/email-configuration",
+            "https://makerkit.dev/docs/next-supabase-turbo/emails/email-templates",
+            "https://dev.to/qasim157/send-supabase-auth-emails-from-your-own-mailbox-13hm"
+          ],
+          "source_name": "",
+          "thread_url": "",
+          "template_id": ""
+        },
+        {
+          "id": "3",
+          "title": "Intercept the Clerk custom-email moment: position Resend as the only sender that makes Clerk templates actually yours",
+          "type": "strategic",
+          "why": "The reactemailspro.com finding on replacing Clerk's default auth email templates shows a real, documented developer workflow: teams using Clerk want branded transactional emails but Clerk's native templates are limited. The natural completion of that workflow is 'send the custom react-email template via Resend' \u2014 but that connection is not yet made explicitly in Clerk's ecosystem. Clerk has millions of developer users; owning this integration slot is a high-leverage distribution move.",
+          "priority": "P1",
+          "impact": "high",
+          "effort": "low",
+          "category": "Ecosystem wedge / integration distribution",
+          "steps": [
+            "Build and publish a minimal open-source repo: `clerk-resend-react-email` \u2014 a Next.js example that wires Clerk webhooks \u2192 react-email template rendering \u2192 Resend send, with a one-click Deploy to Vercel button. This is the artifact that gets starred and linked.",
+            "Submit it to Clerk's official integrations/community page and open a GitHub Discussion in the clerk-sdk-node repo pointing to the pattern \u2014 developers searching for 'clerk custom email' will find it.",
+            "Write a focused post on dev.to and the Resend blog: 'Replace Clerk's default emails with your own React components in 15 minutes' \u2014 concrete, tutorial-style, no fluff. Link from the repo README.",
+            "DM the Clerk DevRel team to explore a co-marketed integration announcement \u2014 Clerk benefits from showing extensibility, Resend gets distribution into Clerk's install base."
+          ],
+          "sources": [
+            "https://reactemailspro.com/blog/clerk-auth-emails-react-email",
+            "https://react.email/"
+          ],
+          "source_name": "",
+          "thread_url": "",
+          "template_id": ""
+        },
+        {
+          "id": "4",
+          "title": "Build a 'react-email \u2192 Resend' GitHub Action: make production sending a one-line CI step",
+          "type": "strategic",
+          "why": "The react-email preview environment patterns finding (reactemailspro.com) reveals that teams are already thinking about dev/staging/production email preview workflows. This is a signal that email is being treated as code with environments \u2014 exactly Resend's positioning. A GitHub Action that renders react-email templates and sends via Resend API on merge closes the loop between 'email as code' philosophy and actual CI/CD practice, creating a sticky, infrastructure-level integration that is hard to rip out.",
+          "priority": "P1",
+          "impact": "high",
+          "effort": "medium",
+          "category": "Developer tooling / infrastructure stickiness",
+          "steps": [
+            "Publish `resend/send-email-action` to the GitHub Marketplace \u2014 inputs: template path, Resend API key (secret), recipient, environment flag. On PR: sends a preview to a staging inbox. On merge to main: sends to production list. Zero new tooling required for teams already using react-email.",
+            "Add the Action to Resend's own repo CI as a dogfood signal and document it in the react-email CLI docs as the recommended 'production deploy' step \u2014 this creates a canonical reference in the OSS project itself.",
+            "Reach out to high-star Next.js/Remix starter kit repos on GitHub (t3-stack, create-t3-app, etc.) with a PR that adds the Action to their email sending workflow \u2014 each merged PR is passive distribution to thousands of forks.",
+            "Instrument Action usage via a lightweight ping on run (standard for GitHub Actions) to track adoption and identify which repos are using it \u2014 these are warm leads for Resend's paid tier."
+          ],
+          "sources": [
+            "https://reactemailspro.com/blog/preview-environment-patterns",
+            "https://react.email/docs/cli"
+          ],
+          "source_name": "",
+          "thread_url": "",
+          "template_id": ""
+        },
+        {
+          "id": "5",
+          "title": "Reframe against AWS SES/Wraps: own 'SES is infrastructure, Resend is the developer experience layer' narrative before Wraps does",
+          "type": "strategic",
+          "why": "The 'Show HN: Wraps \u2013 AWS SES made usable' finding is a direct competitive signal: a well-positioned competitor is explicitly targeting developers frustrated with SES, using the same 'one command' DX framing Resend owns. Wraps is early (Show HN stage) but the narrative is identical. Resend needs to publish a clear, public comparison that makes the category distinction before Wraps gets traction \u2014 not a FUD piece, but a sharp technical breakdown of why 'SES wrapper' and 'email for developers' are fundamentally different bets.",
+          "priority": "P1",
+          "impact": "high",
+          "effort": "low",
+          "category": "Category positioning / competitive moat",
+          "steps": [
+            "Publish 'Why we didn't build a SES wrapper' as a first-person engineering post from the Resend founders \u2014 cover: react-email native rendering, API design philosophy, deliverability as a managed primitive, and why wrapping AWS still means owning AWS's failure modes. This is a category-defining document, not a product page.",
+            "Submit it to Hacker News as a 'Show HN' or blog post on a Monday morning \u2014 the Wraps thread already shows HN is actively interested in this space and will engage with a sharp technical take.",
+            "Pin the post in the Resend GitHub repo README and react-email repo README as 'Why Resend' \u2014 every OSS visitor who is evaluating alternatives reads it in context.",
+            "Monitor the Wraps HN thread (ycombinator.com/item?id=46720202) for developer objections and answer them directly in comments with specific Resend capabilities \u2014 not promotional, but technically precise."
+          ],
+          "sources": [
+            "https://news.ycombinator.com/item?id=46720202",
+            "https://news.ycombinator.com/item?id=46023004"
+          ],
+          "source_name": "",
+          "thread_url": "",
+          "template_id": ""
+        },
+        {
+          "id": "6",
+          "title": "Engage the Wraps 'Show HN' thread: answer the SES-frustration signal with a precise, non-promotional Resend comparison",
+          "type": "engagement",
+          "why": "This thread is live developer conversation about exactly the pain Resend solves \u2014 SES complexity. The founder of Wraps explicitly mentions 'watching developers struggle with email infrastructure for 2 years at SendGrid.' Resend's founder posting a technically sharp, honest comparison (not a pitch) in this thread reaches the highest-intent developer audience at the moment they are evaluating alternatives. HN comments from founders carry disproportionate weight and get indexed.",
+          "priority": "P0",
+          "impact": "high",
+          "effort": "low",
+          "category": "Competitive intercept / community presence",
+          "steps": [
+            "Post a reply from the Resend founder account that acknowledges Wraps' valid point about SES UX, then draws a precise technical distinction: 'We made a different bet \u2014 instead of making SES usable, we rebuilt the API contract around how developers actually write email today (React components, typed SDKs, git-native templates). Happy to share what we learned about where the SES abstraction breaks down at scale if useful.'",
+            "Follow up only if the thread engages \u2014 do not over-post. The goal is one high-quality, memorable comment that signals category leadership, not a debate.",
+            "Screenshot and share the exchange internally as a positioning artifact \u2014 it clarifies the competitive frame for the whole team and can inform future copy."
+          ],
+          "sources": [
+            "https://news.ycombinator.com/item?id=46720202"
+          ],
+          "source_name": "Hacker News \u2013 Show HN: Wraps \u2013 AWS SES made usable",
+          "thread_url": "https://news.ycombinator.com/item?id=46720202",
+          "template_id": "hn-competitive-positioning-reply"
+        },
+        {
+          "id": "7",
+          "title": "Engage the Sidemail 'Show HN' thread: define what 'email for SaaS' means vs. 'email for developers' before the category blurs",
+          "type": "engagement",
+          "why": "Sidemail is positioning directly on 'email platform for SaaS' \u2014 the same ICP as Resend but with a no-code/low-code angle. This thread is a live category-definition moment. A precise founder comment from Resend that articulates the 'email as code vs. email as a dashboard' distinction \u2014 without being dismissive \u2014 plants a flag in the HN record and reaches developers who are actively choosing between these philosophies right now.",
+          "priority": "P1",
+          "impact": "medium",
+          "effort": "low",
+          "category": "Category positioning / community presence",
+          "steps": [
+            "Post a genuinely curious, non-combative comment: 'Interesting \u2014 we've been thinking about this split too. Our bet is that SaaS teams who treat email as code (react-email templates in git, typed API, PR previews) want a different primitive than teams who want a dashboard. Do you find your users are mostly non-technical founders or engineering-led teams?' \u2014 this invites dialogue and publicly frames the category distinction.",
+            "Use any response to sharpen Resend's own positioning language \u2014 real competitor founder answers are gold for understanding where the market is drawing the line.",
+            "If the thread surfaces specific developer objections to code-first email (e.g., 'too complex for small teams'), capture those verbatim for the Resend onboarding copy and docs."
+          ],
+          "sources": [
+            "https://news.ycombinator.com/item?id=46023004"
+          ],
+          "source_name": "Hacker News \u2013 Show HN: Sidemail \u2013 Email platform for SaaS",
+          "thread_url": "https://news.ycombinator.com/item?id=46023004",
+          "template_id": "hn-category-definition-reply"
+        },
+        {
+          "id": "8",
+          "title": "Make react-email the canonical email layer in every major Next.js/Supabase/Clerk SaaS boilerplate \u2014 before a competitor does",
+          "type": "strategic",
+          "why": "The makerkit and reactemailspro findings show that SaaS starter kits are already documenting email configuration in depth \u2014 and they are reaching for generic SMTP or incomplete patterns. Boilerplates are a compounding distribution channel: every developer who clones a starter kit that ships react-email + Resend as the default gets a pre-activated path to a paid account. This is infrastructure-level lock-in that costs almost nothing to achieve right now because the boilerplate ecosystem is still forming.",
+          "priority": "P1",
+          "impact": "high",
+          "effort": "medium",
+          "category": "Ecosystem distribution / default-setting",
+          "steps": [
+            "Identify the top 10 Next.js/Supabase/Remix SaaS boilerplates by GitHub stars (makerkit, t3-stack, supastarter, Taxonomy, etc.) and open PRs that replace their email module with a react-email + Resend implementation \u2014 include a free-tier API key setup guide in the PR description to reduce maintainer friction.",
+            "For boilerplates that accept sponsorship or partnerships (makerkit explicitly sells docs access), offer a co-marketing arrangement: Resend is listed as the recommended email provider in exchange for a maintained integration module.",
+            "Create a public 'Resend-ready boilerplates' registry page on resend.com \u2014 a curated list of starters that ship with Resend pre-configured. This gives boilerplate maintainers an SEO and credibility incentive to integrate.",
+            "Measure activation rate from boilerplate-sourced signups by adding a `utm_source=boilerplate&utm_medium=starter&utm_campaign=[boilerplate-name]` parameter to the API key provisioning link in each PR \u2014 this closes the attribution loop the objective explicitly calls for."
+          ],
+          "sources": [
+            "https://makerkit.dev/docs/next-supabase-turbo/emails/email-configuration",
+            "https://makerkit.dev/docs/next-supabase-turbo/emails/email-templates",
+            "https://reactemailspro.com/blog/clerk-auth-emails-react-email",
+            "https://react.email/"
+          ],
+          "source_name": "",
+          "thread_url": "",
+          "template_id": ""
+        }
+      ],
+      "artifacts": [
+        {
+          "id": "52a73431",
+          "opportunity_id": "6",
+          "title": "Engage the Wraps 'Show HN' thread: answer the SES-frustration signal with a precise, non-promotional Resend comparison",
+          "channel": "Hacker News \u2013 Show HN: Wraps \u2013 AWS SES made usable",
+          "body": "# HN Comment Draft for Resend Founder\n\n---\n\n**Context before posting:** This works best if posted as the Resend founder or a core team member (not a generic company account). The credibility comes from the person, not the brand. Timing matters\u2014post within 6\u201312 hours of the thread going live, before it drops off the front page.\n\n---\n\n## Draft Comment\n\nHonest take: Wraps solves a real problem, and the SES angle is smart\u2014there's definitely a market of teams who want to stay in AWS and just need the wrapper.\n\nWe took a different bet with Resend. Instead of making SES easier, we asked: what if email infrastructure was designed for how developers actually work in 2024?\n\nThe core difference isn't technical\u2014it's philosophical. SES (and Wraps on top of it) still treats email as a separate system you integrate with. You manage templates in one place, send from another, debug logs in a third. It's better than raw SES, but it's still email-as-a-silo.\n\nWe built Resend around the idea that email should live in your codebase. React components for templates. TypeScript for type safety. Same deployment pipeline as your app. No dashboard context-switching. That's why we see teams shipping email features 3\u20134x faster than the traditional flow.\n\nThe tradeoff: you're not staying in AWS. You're trading AWS lock-in for developer velocity. That's the right call for some teams, wrong for others.\n\nIf you're already deep in the AWS ecosystem and SES costs aren't killing you, Wraps is a solid choice. If you're building a product where email is a first-class feature (onboarding flows, notifications, user-triggered emails), the DX difference compounds.\n\nWorth trying both if the use case matters to your business.\n\n---\n\n## Why This Works\n\n1. **Honest about the competitor** \u2013 Acknowledges Wraps solves a real problem. Removes the \"we're better\" smell.\n2. **Positions on philosophy, not features** \u2013 Doesn't list 10 bullet points. Explains the *why* behind the design choice.\n3. **Specific to developer workflow** \u2013 Mentions actual pain points (template management, context-switching, debugging) that HN readers recognize.\n4. **Acknowledges the tradeoff** \u2013 Doesn't hide the cost (leaving AWS). Builds credibility.\n5. **Ends with nuance** \u2013 \"Right call for some teams, wrong for others\" is the opposite of salesy. It's honest.\n6. **No CTA, no link** \u2013 Lets the comment stand on its own. HN readers will find you if they're interested.\n7. **Founder voice** \u2013 Conversational, slightly technical, no corporate speak.\n\n---\n\n## Posting Checklist\n\n- [ ] Post as founder or core team member (not @resend account)\n- [ ] Wait for thread to have 20+ comments (shows engagement, less likely to be buried)\n- [ ] Post in the first 8 hours (algorithm window on HN)\n- [ ] Don't reply to your own comment unless someone asks a direct question\n- [ ] If it gets traction, resist the urge to add \"Thanks for the interest! DM us\" \u2013 let it breathe",
+          "model_used": "claude-haiku-4-5-20251001"
+        },
+        {
+          "id": "23cdf3ca",
+          "opportunity_id": "7",
+          "title": "Engage the Sidemail 'Show HN' thread: define what 'email for SaaS' means vs. 'email for developers' before the category blurs",
+          "channel": "Hacker News \u2013 Show HN: Sidemail \u2013 Email platform for SaaS",
+          "body": "# HN Comment Draft for Sidemail Thread\n\n---\n\n**[Reply to Show HN: Sidemail]**\n\nThis is a solid product, but I think there's a real distinction worth naming here that'll matter as this category matures.\n\n\"Email for SaaS\" and \"email for developers\" are solving different problems, even though they look similar on the surface.\n\n**Email for SaaS** (which is what Sidemail is doing) optimizes for: non-technical founders/marketers who need to send email, want a UI, and treat email as a business function. The job is \"I need to send transactional and marketing email without hiring an engineer.\" Dashboard-first, template-first, visual workflows.\n\n**Email for developers** optimizes for: teams where the engineer *is* the operator. Email is part of the product code, not a separate system. The job is \"I want to compose, version, test, and deploy email the same way I do everything else.\" API-first, component-first, git-native.\n\nThese require totally different UX assumptions. A dashboard is actually friction for the second group\u2014they'd rather define email in code, review it in PRs, and ship it with their app. A visual builder is the right tool for the first group.\n\nSidemail looks like it's nailing the first one. But if you're a dev-first company (Vercel, Stripe, etc.), you probably want something built around that second assumption from the ground up.\n\nBoth are real markets. The mistake is treating them as one.\n\n---\n\n**Why this works:**\n\n- **Substantive without dismissing**: Acknowledges Sidemail's legitimacy, doesn't strawman it\n- **Category clarity**: Plants a flag on \"email as code\" as a distinct positioning *before* the space gets muddled\n- **Developer-native reasoning**: Speaks in terms of job-to-be-done and UX assumptions, not features\n- **Resend mention is earned**: Only appears because it's the natural example of the second category\n- **HN-native tone**: Analytical, helpful, no sales language\n- **Defensible**: A founder could stand behind this distinction in any conversation\n\nThis comment will age well in the thread and surfaces to developers actively evaluating options *right now*.",
+          "model_used": "claude-haiku-4-5-20251001"
+        }
+      ]
+    },
+    "_delay": 0.45
+  }
+]

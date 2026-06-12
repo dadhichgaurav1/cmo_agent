@@ -1,28 +1,29 @@
-"""Maximem Synap-backed context memory.
+"""Maximem Synap memory wrapper with a local JSON fallback so the agent always runs.
 
-Falls back to a local JSON store so the agent runs even before Synap is wired.
-Swap the `_synap_*` bodies with the real Synap SDK once the snippet is provided.
+customer_id = the analyzed company (the compounding "market brain").
+user_id = the founder.
 """
 import json
 import os
-from typing import Any, Dict
+from typing import List
 
 from app import config
 
-_LOCAL_PATH = os.getenv("LOCAL_MEMORY_PATH", "/tmp/cmo_memory.json")
+_LOCAL = os.getenv("LOCAL_MEMORY_PATH", "/tmp/cmo_memory.json")
+USER_ID = "founder"
 
 
-def _load_local() -> Dict[str, Any]:
+def _load() -> dict:
     try:
-        with open(_LOCAL_PATH) as f:
+        with open(_LOCAL) as f:
             return json.load(f)
     except Exception:
         return {}
 
 
-def _save_local(data: Dict[str, Any]) -> None:
+def _save(data: dict) -> None:
     try:
-        with open(_LOCAL_PATH, "w") as f:
+        with open(_LOCAL, "w") as f:
             json.dump(data, f)
     except Exception:
         pass
@@ -30,45 +31,53 @@ def _save_local(data: Dict[str, Any]) -> None:
 
 class Memory:
     def __init__(self):
-        self.use_synap = config.has(config.SYNAP_API_KEY) and config.has(config.SYNAP_BASE_URL)
+        self.sdk = None
+        self.enabled = config.has(config.SYNAP_API_KEY)
+        self._tried = False
 
-    async def store(self, namespace: str, kind: str, value: Any) -> None:
-        if self.use_synap:
-            try:
-                return await self._synap_store(namespace, kind, value)
-            except Exception:
-                pass  # never let memory break the run
-        data = _load_local()
-        data.setdefault(namespace, {})[kind] = value
-        _save_local(data)
+    async def _ensure(self):
+        if self.sdk is not None or not self.enabled or self._tried:
+            return
+        self._tried = True
+        try:
+            from maximem_synap import MaximemSynapSDK
+            self.sdk = MaximemSynapSDK(api_key=config.SYNAP_API_KEY)
+            await self.sdk.initialize()
+        except Exception:
+            self.sdk = None
+            self.enabled = False
 
-    async def retrieve(self, namespace: str) -> Dict[str, Any]:
-        if self.use_synap:
+    async def recall(self, customer_id: str, queries: List[str]) -> str:
+        await self._ensure()
+        if self.sdk:
             try:
-                return await self._synap_retrieve(namespace)
+                ctx = await self.sdk.customer.context.fetch(
+                    customer_id=customer_id, search_query=queries, mode="accurate"
+                )
+                return getattr(ctx, "formatted_context", "") or ""
             except Exception:
                 pass
-        return _load_local().get(namespace, {})
+        data = _load().get(customer_id)
+        return json.dumps(data)[:2000] if data else ""
 
-    # --- TODO: replace with the real Maximem Synap SDK calls ---
-    async def _synap_store(self, namespace: str, kind: str, value: Any) -> None:
-        import httpx
-        async with httpx.AsyncClient(timeout=20) as c:
-            await c.post(
-                f"{config.SYNAP_BASE_URL}/store",
-                headers={"Authorization": f"Bearer {config.SYNAP_API_KEY}"},
-                json={"namespace": namespace, "kind": kind, "value": value},
-            )
-
-    async def _synap_retrieve(self, namespace: str) -> Dict[str, Any]:
-        import httpx
-        async with httpx.AsyncClient(timeout=20) as c:
-            r = await c.get(
-                f"{config.SYNAP_BASE_URL}/retrieve",
-                headers={"Authorization": f"Bearer {config.SYNAP_API_KEY}"},
-                params={"namespace": namespace},
-            )
-            return r.json() if r.status_code == 200 else {}
+    async def ingest(self, customer_id: str, kind: str, text: str, url: str = "", run_id: str = ""):
+        await self._ensure()
+        if self.sdk:
+            try:
+                await self.sdk.memories.create(
+                    document=text,
+                    document_type="document",
+                    customer_id=customer_id,
+                    user_id=USER_ID,
+                    mode="fast",
+                    metadata={"kind": kind, "source_url": url, "run_id": run_id},
+                )
+                return
+            except Exception:
+                pass
+        data = _load()
+        data.setdefault(customer_id, {}).setdefault(kind, []).append(text[:1000])
+        _save(data)
 
 
 memory = Memory()
