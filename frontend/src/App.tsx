@@ -152,7 +152,7 @@ export default function App() {
     <div className="app">
       <header className="top">
         <div className="brand">
-          <div className="wordmark"><span className="mark">◆</span> CMO Cofounder</div>
+          <div className="wordmark"><span className="mark">◆</span> StratCMO</div>
           <div className="sub">market intelligence that acts like a cofounder, not a tracker</div>
         </div>
         <div className="controls">
