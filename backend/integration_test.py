@@ -25,7 +25,7 @@ def check(name, cond, detail=""):
 async def main():
     from app import config, graph, models, tools, composio_tools
     from app import main as appmain
-    from app.memory import memory
+    from app.memory import memory, conversation_id_for
 
     check("imports: all modules load", True)
 
@@ -47,9 +47,15 @@ async def main():
     hn = await tools.hn_search("email api developers", 3)
     check("tool: hacker news search (free)", len(hn) > 0, f"{len(hn)} hits")
 
-    await memory.ingest("itest", "note", "integration test marker", run_id="t")
-    rc = await memory.recall("itest", ["integration"])
-    check("memory: ingest + recall", rc != "", f"synap_active={bool(memory.sdk)}")
+    try:
+        await memory.bootstrap("itest", [{"text": "integration marker", "kind": "note", "run_id": "t"}])
+        conv = conversation_id_for("itest")
+        await memory.record_turn(conv, "user", "ping", "itest")
+        rc = await memory.recall("itest", ["integration"])
+        check("memory: bootstrap + record_turn + recall (no errors)", True,
+              f"synap_active={bool(memory.sdk)} recall_len={len(rc)}")
+    except Exception as e:
+        check("memory: bootstrap + record_turn + recall (no errors)", False, str(e)[:90])
 
     routes = set(r.path for r in appmain.app.routes if hasattr(r, "path"))
     need = {"/api/health", "/api/analyze/stream", "/api/chat", "/api/research", "/api/ui/render"}

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: cmo-cofounder
+    name: cmo-agent
     runtime: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
@@ -17,6 +17,14 @@ services:
         sync: false
       - key: SYNAP_API_KEY
         sync: false
+      - key: PIONEER_API_KEY
+        sync: false
+      - key: PIONEER_BASE_URL
+        value: https://api.pioneer.ai
+      - key: OPENUI_URL
+        sync: false
+      - key: OPENUI_MODEL
+        value: gpt-4o
       - key: BROWSERBASE_API_KEY
         sync: false
       - key: BROWSERBASE_PROJECT_ID

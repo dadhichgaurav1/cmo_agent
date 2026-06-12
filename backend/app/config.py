@@ -11,6 +11,10 @@ def _get(key: str) -> str:
 
 ANTHROPIC_API_KEY = _get("ANTHROPIC_API_KEY")
 OPENAI_API_KEY = _get("OPENAI_API_KEY")
+# Pioneer: sponsor inference gateway (Anthropic/OpenAI-compatible). Primary LLM backend
+# when present; native Anthropic/OpenAI are used as fallback. Scoped to this process only.
+PIONEER_API_KEY = _get("PIONEER_API_KEY")
+PIONEER_BASE_URL = _get("PIONEER_BASE_URL") or "https://api.pioneer.ai"
 EXA_API_KEY = _get("EXA_API_KEY")
 COMPOSIO_API_KEY = _get("COMPOSIO_API_KEY")
 SYNAP_API_KEY = _get("SYNAP_API_KEY")
