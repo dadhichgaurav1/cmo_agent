@@ -165,5 +165,18 @@ class Memory:
                 pass
         return ""
 
+    # --- founder preferences (USER scope, scoped to THIS customer; never cross-customer) ---
+    async def recall_user(self, customer_id: str, queries: List[str]) -> str:
+        await self._ensure()
+        if self.sdk:
+            try:
+                ctx = await self.sdk.user.context.fetch(
+                    user_id=USER_ID, customer_id=customer_id, search_query=queries, mode="accurate"
+                )
+                return getattr(ctx, "formatted_context", "") or ""
+            except Exception:
+                pass
+        return ""
+
 
 memory = Memory()

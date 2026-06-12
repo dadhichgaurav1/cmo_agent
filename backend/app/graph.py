@@ -193,6 +193,10 @@ async def draft(state: S, config) -> S:
     opps = state.get("opportunities", [])
     targets = [o for o in opps if o.get("type") == "engagement"][:3] or opps[:1]
     humanizer = await skills.resolve_skill("humanizer", emit)  # always-on baseline voice skill
+    # founder voice/preferences from Synap (USER scope, this company only) — drafts sound more like them over time
+    prefs = await memory.recall_user(state["slug"], ["founder voice", "tone", "writing style", "phrasing", "dos and don'ts"])
+    if prefs:
+        await emit({"type": "memory", "label": "Applying your voice from Synap memory", "detail": prefs[:400], "model": "synap"})
     artifacts = []
     for o in targets:
         await emit({"type": "step", "label": f"Drafting: {o.get('title', '')[:50]}", "model": "claude-haiku-4-5"})
@@ -200,7 +204,7 @@ async def draft(state: S, config) -> S:
         channel_skill = await skills.resolve_skill(o.get("template_id") or o.get("source_name") or "outreach", emit)
         sys_aug = prompts.DRAFT_SYS + skills.render([humanizer, channel_skill])
         body, name = await models.run_text("draft", sys_aug,
-                                           prompts.draft_human(state["profile"], state["objective"], o), max_tokens=900)
+                                           prompts.draft_human(state["profile"], state["objective"], o, prefs), max_tokens=900)
         a = Artifact(
             id=str(uuid.uuid4())[:8], opportunity_id=o.get("id", ""), title=o.get("title", ""),
             channel=o.get("source_name") or o.get("category", ""), body=body, model_used=name,

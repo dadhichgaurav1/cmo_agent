@@ -160,12 +160,14 @@ Pick the best slug for this query. Build args_json as a JSON object whose keys a
 (commonly a search/query field) filled from the query. Set confidence 0-1; use <0.4 if nothing fits well."""
 
 
-def draft_human(profile, objective, opp):
+def draft_human(profile, objective, opp, prefs=""):
+    prefs_block = (f"\nFounder's known voice & preferences (from Synap memory — match this, it is how they write):\n{prefs}\n"
+                   if prefs else "")
     return f"""Company: {profile.get('name')} — {profile.get('one_liner')}
 Engagement opportunity: {opp.get('title')}
 Channel/source: {opp.get('source_name') or opp.get('category')} | Template: {opp.get('template_id')}
 Why it matters: {opp.get('why')}
 Thread: {opp.get('thread_url')}
-
+{prefs_block}
 Write a ready-to-send draft that fits this channel's culture: a Reddit reply is genuinely helpful and non-promotional; an HN comment is substantive; a LinkedIn post has a real hook; a review response is gracious and specific.
 Be useful first. Mention the company only if it's natural and non-salesy. No emoji spam, no marketing clichés, no "I'd love to..." filler. Keep it tight and human."""
