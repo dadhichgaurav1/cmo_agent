@@ -45,8 +45,16 @@ class PlanItem(BaseModel):
     access: str = "exa"        # exa | hackernews | reddit | browser
 
 
+class DiscardedIdea(BaseModel):
+    """Addendum 3: an idea the agent considered and chose not to pursue, with why."""
+    idea: str = ""
+    reason: str = ""
+    stage: str = ""            # plan | reflect | synthesize (set by the node)
+
+
 class PlanOut(BaseModel):
     items: List[PlanItem] = Field(default_factory=list)
+    discarded: List[DiscardedIdea] = Field(default_factory=list)
 
 
 class ReflectOut(BaseModel):
@@ -54,6 +62,7 @@ class ReflectOut(BaseModel):
     critique: str = ""
     extra_query: Optional[str] = None
     extra_access: Optional[str] = None
+    discarded: List[DiscardedIdea] = Field(default_factory=list)
 
 
 class Finding(BaseModel):
@@ -82,6 +91,7 @@ class Opportunity(BaseModel):
 
 class SynthesisOut(BaseModel):
     opportunities: List[Opportunity] = Field(default_factory=list)
+    discarded: List[DiscardedIdea] = Field(default_factory=list)
 
 
 class Artifact(BaseModel):

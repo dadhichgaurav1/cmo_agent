@@ -64,7 +64,8 @@ Produce EXACTLY 4 research moves, each a DIFFERENT angle. Do NOT repeatedly sear
 3. Emerging use-case / segment — a non-obvious segment, workflow, or use-case adjacent to the core product.
 4. Narrative / positioning shift — signal about how the category or buyer conversation is moving.
 For each: goal, a specific query, access. Prefer hackernews/reddit/exa for real community threads.
-If the IDEAL source for a move is a specific platform outside that set (e.g. github, producthunt, stackoverflow, g2, devto, youtube), name that platform as the access — the agent can discover and bind a tool for it at runtime. Use a platform name, not a sentence."""
+If the IDEAL source for a move is a specific platform outside that set (e.g. github, producthunt, stackoverflow, g2, devto, youtube), name that platform as the access — the agent can discover and bind a tool for it at runtime. Use a platform name, not a sentence.
+Also return `discarded`: 2-4 research angles you considered but chose NOT to pursue, each with a one-line reason (e.g. "too generic", "already obvious", "low signal for this stage"). This shows your work to the founder."""
 
 
 def reflect_human(objective, findings):
@@ -74,7 +75,8 @@ Findings so far:
 {fb or '(none yet)'}
 
 Do the findings now cover (a) real competitor pain or switching signal, (b) at least one adjacency or non-obvious channel, AND (c) a specific community thread we could engage?
-If yes, set sufficient=true. If a clear gap remains, propose exactly ONE more search targeting a DIFFERENT angle than what's already covered (extra_query + extra_access from hackernews|reddit|exa)."""
+If yes, set sufficient=true. If a clear gap remains, propose exactly ONE more search targeting a DIFFERENT angle than what's already covered (extra_query + extra_access from hackernews|reddit|exa).
+Also return `discarded`: any follow-up directions you explicitly ruled out here, each with a one-line reason."""
 
 
 def synth_human(profile, objective, sources, findings):
@@ -88,7 +90,8 @@ Produce 5-8 opportunities that ladder up to the objective. Mix two types:
 - type "strategic": positioning / adjacency / channel moves, each with concrete steps.
 - type "engagement": a SPECIFIC thread or post to act on now — set source_name, thread_url (reuse a finding's url), template_id, and why it's worth the founder's time.
 For each: title, type, why (tie to a finding or the stage), priority (P0|P1|P2), impact (high|medium|low), effort (high|medium|low), category, steps (2-4), sources (urls).
-Prefer non-obvious, high-leverage moves over generic ones. No filler."""
+Prefer non-obvious, high-leverage moves over generic ones. No filler.
+Also return `discarded`: 2-4 opportunities you considered and deliberately dropped, each with a one-line reason (e.g. "fails the non-obvious bar", "wrong stage", "no evidence in findings"). The founder should see what you ruled out, so they trust the thoroughness."""
 
 
 BIND_SYS = (

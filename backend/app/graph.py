@@ -33,11 +33,28 @@ class S(TypedDict, total=False):
     iterations: int
     opportunities: list
     artifacts: list
+    ledger: list
     _sufficient: bool
 
 
 def _emit(config):
     return config["configurable"]["emit"]
+
+
+async def _log_discarded(state: S, emit, stage: str, items) -> list:
+    """Accumulate ideas considered-and-discarded (Addendum 3) and surface them."""
+    ledger = list(state.get("ledger", []))
+    entries = []
+    for it in items or []:
+        d = it.model_dump() if hasattr(it, "model_dump") else dict(it)
+        d["stage"] = stage
+        if d.get("idea"):
+            entries.append(d)
+    if entries:
+        ledger.extend(entries)
+        await emit({"type": "discarded", "label": f"{len(entries)} ideas ruled out at {stage}",
+                    "data": entries, "model": "claude-sonnet-4-6"})
+    return ledger
 
 
 def slugify(url: str) -> str:
@@ -93,7 +110,8 @@ async def plan(state: S, config) -> S:
     )
     items = [i.model_dump() for i in out.items][:CAP]
     await emit({"type": "plan", "label": f"{len(items)} research moves", "data": items, "model": name})
-    return {"plan": items}
+    ledger = await _log_discarded(state, emit, "plan", out.discarded)
+    return {"plan": items, "ledger": ledger}
 
 
 async def act(state: S, config) -> S:
@@ -129,6 +147,7 @@ async def reflect(state: S, config) -> S:
         plan_items = list(state.get("plan", []))
         plan_items.append({"goal": "gap-fill", "query": out.extra_query, "access": out.extra_access or "exa"})
         upd["plan"] = plan_items
+    upd["ledger"] = await _log_discarded(state, emit, "reflect", out.discarded)
     return upd
 
 
@@ -163,7 +182,8 @@ async def synthesize(state: S, config) -> S:
     await emit({"type": "opportunities", "label": f"{len(strategic)} strategic moves", "data": strategic, "model": name})
     if engagement:
         await emit({"type": "radar", "label": f"{len(engagement)} engagement opportunities", "data": engagement, "model": name})
-    return {"opportunities": opps}
+    ledger = await _log_discarded(state, emit, "synthesize", out.discarded)
+    return {"opportunities": opps, "ledger": ledger}
 
 
 async def draft(state: S, config) -> S:
@@ -206,13 +226,17 @@ async def remember(state: S, config) -> S:
         items.append({"text": f"{o.get('type')} opportunity — {o.get('title')}: {o.get('why')}",
                       "kind": "opportunity", "url": o.get("thread_url", ""), "run_id": rid})
     for a in state.get("artifacts", []):
-        items.append({"text": f"Draft ({a.get('channel')}) — {a.get('title')}\n{(a.get('body') or '')[:600]}",
+        items.append({"text": f"Draft ({a.get('channel')}) - {a.get('title')}\n{(a.get('body') or '')[:600]}",
                       "kind": "draft", "run_id": rid})
+    for d in state.get("ledger", []):  # roads not taken, so memory knows what was already ruled out
+        items.append({"text": f"Ruled out at {d.get('stage')}: {d.get('idea')} ({d.get('reason')})",
+                      "kind": "reasoning", "run_id": rid})
     await memory.bootstrap(cid, items)  # one batch_create = the company's durable market brain
     await emit({"type": "capabilities", "label": "Capabilities used this run",
                 "data": capabilities.registry_snapshot()})
     await emit({"type": "done", "label": "Done",
-                "data": {"opportunities": state.get("opportunities", []), "artifacts": state.get("artifacts", [])}})
+                "data": {"opportunities": state.get("opportunities", []), "artifacts": state.get("artifacts", []),
+                         "ledger": state.get("ledger", [])}})
     return {}
 
 

@@ -98,7 +98,21 @@ async def main():
         if gen:
             os.remove(os.path.join(BASE, "app", "skills", gen.name + ".json"))
 
+    # --- Addendum 3: reasoning ledger ---
+    from app.schemas import PlanOut, SynthesisOut
+    check("ledger: discarded field on plan/synth schemas",
+          "discarded" in PlanOut.model_fields and "discarded" in SynthesisOut.model_fields)
+
     if RUN_LIVE:
+        from app import prompts as P
+        po, _ = await models.run_structured("plan", P.PLAN_SYS,
+            P.plan_human({"name": "Resend", "category": "email API", "competitors": ["Postmark"]},
+                         {"objective": "category ownership"},
+                         [{"name": "HN", "access": "hackernews"}]), PlanOut)
+        check("LIVE: planner returns discarded ideas with reasons",
+              len(po.discarded) > 0 and all(d.reason for d in po.discarded),
+              f"{len(po.discarded)} discarded")
+
         ex = await tools.exa_search("resend email api", 2)
         check("LIVE: exa search", len(ex) > 0, f"{len(ex)} results")
         txt, name = await models.run_text("chat", "You are terse.", "Reply with just: OK", max_tokens=10)
