@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: cmo-cofounder
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: starter
+    healthCheckPath: /api/health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: EXA_API_KEY
+        sync: false
+      - key: COMPOSIO_API_KEY
+        sync: false
+      - key: SYNAP_API_KEY
+        sync: false
+      - key: BROWSERBASE_API_KEY
+        sync: false
+      - key: BROWSERBASE_PROJECT_ID
+        sync: false
