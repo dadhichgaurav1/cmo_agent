@@ -110,6 +110,67 @@ async def research(body: ResearchBody):
     return {"findings": [f.model_dump() for f in findings], "takeaways": takeaways, "model": name}
 
 
+OPENUI_SYS = (
+    "You are OpenUI, a UI generator. Given a CMO dashboard's data, output ONE self-contained HTML "
+    "fragment (inline styles only, dark theme, modern rounded cards, accent purple/cyan) that renders it "
+    "beautifully. Output ONLY raw HTML — no markdown fences, no <html>/<head>, no explanation."
+)
+
+
+def _ui_prompt(b) -> str:
+    return (
+        f"Company: {json.dumps(b.profile)[:800]}\n"
+        f"Objective: {json.dumps(b.objective)[:600]}\n"
+        f"Strategic moves: {json.dumps(b.opportunities)[:2500]}\n"
+        f"Engagement radar: {json.dumps(b.radar)[:1500]}\n\n"
+        "Render a bespoke dashboard: a bold objective header, the prioritized strategic moves "
+        "(priority + title + why), and an 'engagement radar' section. Self-contained HTML fragment only."
+    )
+
+
+def _extract_html(text: str) -> str:
+    t = (text or "").strip()
+    if "```" in t:
+        parts = t.split("```")
+        if len(parts) >= 3:
+            body = parts[1]
+            if body.lower().startswith("html"):
+                body = body[4:]
+            return body.strip()
+    return t
+
+
+async def _generate_ui(prompt: str):
+    openui_url = os.getenv("OPENUI_URL", "").strip()
+    if openui_url:  # genuine OpenUI (OpenAI-compatible /v1/chat/completions)
+        try:
+            from openai import AsyncOpenAI
+            client = AsyncOpenAI(base_url=openui_url.rstrip("/") + "/v1", api_key="openui")
+            resp = await client.chat.completions.create(
+                model=os.getenv("OPENUI_MODEL", "gpt-4o"),
+                messages=[{"role": "system", "content": OPENUI_SYS}, {"role": "user", "content": prompt}],
+                max_tokens=2200,
+            )
+            return _extract_html(resp.choices[0].message.content), "openui"
+        except Exception:
+            pass
+    html, _ = await M.run_text("synthesize", OPENUI_SYS, prompt, max_tokens=2200)
+    return _extract_html(html), "model-fallback"
+
+
+class UIBody(BaseModel):
+    profile: dict = {}
+    objective: dict = {}
+    opportunities: list = []
+    radar: list = []
+
+
+@app.post("/api/ui/render")
+async def ui_render(body: UIBody):
+    html, via = await _generate_ui(_ui_prompt(body))
+    return {"html": html, "via": via}
+
+
 # Serve the built frontend if present (single-container deploy)
 _static = os.path.join(os.path.dirname(__file__), "..", "static")
 if os.path.isdir(_static):

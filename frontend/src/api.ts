@@ -53,6 +53,15 @@ export async function researchApi(url: string, query: string) {
   return r.json()
 }
 
+export async function uiRender(payload: any) {
+  const r = await fetch('/api/ui/render', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  return r.json()
+}
+
 export function escapeHtml(s: string): string {
   return (s || '').replace(/[&<>"']/g, (c) => (
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string

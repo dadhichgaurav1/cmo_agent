@@ -90,9 +90,15 @@ async def fetch_site(url: str, max_chars: int = 6000) -> str:
 
 
 async def run_tool(access: str, query: str, num: int = 4) -> List[Finding]:
-    """Dispatch a research move to the right transport. A move never returns empty:
-    HN falls back to EXA; reddit/browser use EXA in Phase 1."""
-    if access == "hackernews":
-        hits = await hn_search(query, num)
-        return hits if hits else await exa_search(query, num)
+    """Dispatch a research move. Community sources (HN/Reddit) route through Composio when
+    the key is valid; everything falls back so a move never returns empty."""
+    if access in ("hackernews", "reddit"):
+        from app import composio_tools
+        via = await composio_tools.composio_search(access, query, num)
+        if via:
+            return via
+        if access == "hackernews":
+            hits = await hn_search(query, num)
+            return hits if hits else await exa_search(query, num)
+        return await exa_search(query, num)  # reddit → EXA fallback until Composio key is valid
     return await exa_search(query, num)
