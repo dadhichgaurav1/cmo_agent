@@ -73,8 +73,9 @@ export function openInTab(title: string, bodyHtml: string) {
   const w = window.open('', '_blank')
   if (!w) return
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
-  <style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0f;color:#e7e7ea;max-width:760px;margin:48px auto;padding:0 24px;line-height:1.65}
-  h1{font-size:19px;letter-spacing:-.01em}pre{white-space:pre-wrap;word-break:break-word;background:#15151c;padding:18px;border-radius:12px;border:1px solid #23232b;font-size:13px}
-  a{color:#67e8f9}.meta{color:#8b8b95;font-size:12px;margin-bottom:18px}</style></head><body>${bodyHtml}</body></html>`)
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:wght@400;500&display=swap" rel="stylesheet">
+  <style>body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#211f1c;max-width:720px;margin:48px auto;padding:0 24px;line-height:1.65}
+  h1{font-family:'Newsreader',Georgia,serif;font-weight:500;font-size:23px;letter-spacing:-.01em}pre{white-space:pre-wrap;word-break:break-word;background:#fff;padding:18px;border-radius:12px;border:1px solid #e7e2d8;font-size:13px}
+  a{color:#c2603f}.meta{color:#8b857a;font-size:12px;margin-bottom:18px}</style></head><body>${bodyHtml}</body></html>`)
   w.document.close()
 }

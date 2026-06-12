@@ -3,20 +3,21 @@ import { analyze, chatApi, researchApi, uiRender, openInTab, escapeHtml } from '
 import type { Ev, Profile, Objective, Source, Opp, Artifact } from './types'
 
 function modelColor(m?: string) {
-  if (!m) return '#94a3b8'
-  if (m.includes('sonnet')) return '#c084fc'
-  if (m.includes('haiku')) return '#67e8f9'
-  if (m.includes('gpt')) return '#34d399'
-  if (m.includes('exa')) return '#fbbf24'
-  if (m.includes('hackernews')) return '#fb923c'
-  if (m.includes('synap')) return '#f472b6'
-  return '#94a3b8'
+  if (!m) return '#8a8378'
+  if (m.includes('sonnet')) return '#c2603f'
+  if (m.includes('haiku')) return '#3e7c74'
+  if (m.includes('gpt')) return '#5e7f4f'
+  if (m.includes('exa')) return '#b07d2e'
+  if (m.includes('composio')) return '#7b6cb3'
+  if (m.includes('hackernews')) return '#c8642e'
+  if (m.includes('synap')) return '#a65a7e'
+  return '#8a8378'
 }
 
 function Badge({ model }: { model?: string }) {
   if (!model) return null
   const c = modelColor(model)
-  return <span className="badge" style={{ color: c, borderColor: c + '55' }}>{model}</span>
+  return <span className="badge" style={{ color: c, borderColor: c + '40', background: c + '14' }}>{model}</span>
 }
 
 const PRIORITIES = ['P0', 'P1', 'P2']
@@ -128,7 +129,10 @@ export default function App() {
   return (
     <div className="app">
       <header className="top">
-        <div className="brand">◆ CMO Cofounder<span className="sub">market intelligence that acts like a cofounder, not a tracker</span></div>
+        <div className="brand">
+          <div className="wordmark"><span className="mark">◆</span> CMO Cofounder</div>
+          <div className="sub">market intelligence that acts like a cofounder, not a tracker</div>
+        </div>
         <div className="controls">
           <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="company url e.g. resend.com" onKeyDown={(e) => e.key === 'Enter' && run()} />
           <div className="toggle">
