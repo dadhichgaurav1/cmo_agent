@@ -10,10 +10,11 @@ from typing import TypedDict
 
 from langgraph.graph import START, END, StateGraph
 
-from app import capabilities, models, prompts, skills, tools
+from app import capabilities, models, monitors, prompts, skills, tools
 from app.memory import memory
 from app.schemas import (
-    Artifact, ProfileObjective, PlanOut, ReflectOut, SourceStrategy, SynthesisOut,
+    Artifact, DiffOut, MonitorPlan, ProfileObjective, PlanOut, ReflectOut,
+    SourceStrategy, SynthesisOut,
 )
 
 CAP = 5  # max research iterations
@@ -34,6 +35,7 @@ class S(TypedDict, total=False):
     opportunities: list
     artifacts: list
     ledger: list
+    monitors: list
     _sufficient: bool
 
 
@@ -208,6 +210,28 @@ async def draft(state: S, config) -> S:
     return {"artifacts": artifacts}
 
 
+async def monitor_plan(state: S, config) -> S:
+    """Addendum 1: after the first analysis the agent self-identifies which signals to watch
+    recurringly, registers them with the scheduler, and surfaces them."""
+    emit = _emit(config)
+    await emit({"type": "step", "label": "Deciding what to watch recurringly", "model": "claude-sonnet-4-6"})
+    try:
+        out, name = await models.run_structured(
+            "synthesize", prompts.MONITOR_SYS,
+            prompts.monitor_human(state["profile"], state["objective"], state.get("sources", []),
+                                  state.get("opportunities", [])),
+            MonitorPlan, temperature=0.3, max_tokens=1500,
+        )
+        jobs = [j.model_dump() for j in out.jobs]
+    except Exception:
+        jobs = []
+    if jobs:
+        monitors.save_plan(state["slug"], jobs)  # persist + register with the scheduler
+        await emit({"type": "monitors", "label": f"{len(jobs)} recurring monitors set",
+                    "data": jobs, "model": name if jobs else "synap"})
+    return {"monitors": jobs}
+
+
 async def remember(state: S, config) -> S:
     emit = _emit(config)
     await emit({"type": "step", "label": "Bootstrapping company memory (Synap)", "model": "synap"})
@@ -231,6 +255,9 @@ async def remember(state: S, config) -> S:
     for d in state.get("ledger", []):  # roads not taken, so memory knows what was already ruled out
         items.append({"text": f"Ruled out at {d.get('stage')}: {d.get('idea')} ({d.get('reason')})",
                       "kind": "reasoning", "run_id": rid})
+    for m in state.get("monitors", []):
+        items.append({"text": f"Monitor ({m.get('cadence')}): {m.get('name')} - {m.get('rationale')}",
+                      "kind": "monitor", "run_id": rid})
     await memory.bootstrap(cid, items)  # one batch_create = the company's durable market brain
     await emit({"type": "capabilities", "label": "Capabilities used this run",
                 "data": capabilities.registry_snapshot()})
@@ -250,6 +277,7 @@ def build_graph():
     g.add_node("reflect", reflect)
     g.add_node("synthesize", synthesize)
     g.add_node("draft", draft)
+    g.add_node("monitor_plan", monitor_plan)
     g.add_node("remember", remember)
     g.add_edge(START, "recall")
     g.add_edge("recall", "objective")
@@ -259,7 +287,8 @@ def build_graph():
     g.add_edge("act", "reflect")
     g.add_conditional_edges("reflect", route_after_reflect, {"act": "act", "synthesize": "synthesize"})
     g.add_edge("synthesize", "draft")
-    g.add_edge("draft", "remember")
+    g.add_edge("draft", "monitor_plan")
+    g.add_edge("monitor_plan", "remember")
     g.add_edge("remember", END)
     return g.compile()
 
@@ -271,3 +300,42 @@ async def run(url: str, mode: str, emit):
     rid = str(uuid.uuid4())[:8]
     state = {"url": url, "mode": mode, "slug": slugify(url), "run_id": rid}
     await GRAPH.ainvoke(state, config={"configurable": {"emit": emit, "run_id": rid}, "recursion_limit": 60})
+
+
+async def run_monitor(slug: str, job: dict, emit=None) -> dict:
+    """Addendum 1: a lightweight recurring run. Recall prior intel, pull fresh signal for one
+    monitor, diff it against what Synap already knows, and record only the delta."""
+    async def _noop(_ev):
+        return None
+    emit = emit or _noop
+    rid = str(uuid.uuid4())[:8]
+    name = job.get("name", "monitor")
+    await emit({"type": "step", "label": f"Monitor: {name}", "model": "synap"})
+
+    prior = await memory.recall(slug, [job.get("query", ""), name, "adjacencies", "channels"])
+    found = await capabilities.research(job.get("access", "exa"), job.get("query", ""), 4, emit)
+    findings = [f.model_dump() for f in found]
+
+    try:
+        diff, _ = await models.run_structured(
+            "reflect", prompts.DIFF_SYS, prompts.diff_human(name, prior or "", findings),
+            DiffOut, temperature=0.2, max_tokens=900,
+        )
+    except Exception:
+        diff = DiffOut(summary="(diff unavailable)")
+
+    entry = {
+        "monitor": name, "summary": diff.summary, "new": diff.new, "changed": diff.changed,
+        "at": monitors.now_iso(), "run_id": rid,
+    }
+    monitors.append_changelog(slug, entry)
+
+    # ingest only the delta, so memory compounds instead of duplicating
+    delta_items = [{"text": f"[{name}] new: {s}", "kind": "update", "run_id": rid} for s in diff.new]
+    delta_items += [{"text": f"[{name}] changed: {s}", "kind": "update", "run_id": rid} for s in diff.changed]
+    if delta_items:
+        await memory.bootstrap(slug, delta_items)
+
+    await emit({"type": "update", "label": f"{name}: {len(diff.new)} new, {len(diff.changed)} changed",
+                "data": entry, "model": "claude-sonnet-4-6"})
+    return entry

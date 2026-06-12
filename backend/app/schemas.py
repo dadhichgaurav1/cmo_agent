@@ -103,6 +103,37 @@ class Artifact(BaseModel):
     model_used: str = ""
 
 
+# --- Addendum 1: self-identified recurring monitors + Synap diff ---
+class MonitorJob(BaseModel):
+    name: str = ""
+    query: str = ""
+    access: str = "exa"          # builtin source or a platform the agent will bind at runtime
+    cadence: str = "weekly"      # daily | weekly | monthly
+    rationale: str = ""          # why this signal is worth watching for THIS company
+
+
+class MonitorPlan(BaseModel):
+    jobs: List[MonitorJob] = Field(default_factory=list)
+
+
+class DiffOut(BaseModel):
+    """The delta between a fresh monitor pull and what Synap already knows."""
+    new: List[str] = Field(default_factory=list)        # genuinely new signal
+    changed: List[str] = Field(default_factory=list)    # shifted since last time
+    confirmed: List[str] = Field(default_factory=list)  # re-seen, no change
+    stale: List[str] = Field(default_factory=list)      # prior intel that looks dated
+    summary: str = ""
+
+
+class ChangelogEntry(BaseModel):
+    monitor: str = ""
+    summary: str = ""
+    new: List[str] = Field(default_factory=list)
+    changed: List[str] = Field(default_factory=list)
+    at: str = ""
+    run_id: str = ""
+
+
 # --- Addendum 4: runtime tool discovery + binding ---
 class ToolBinding(BaseModel):
     """The model's choice of which discovered tool to bind for a research need."""

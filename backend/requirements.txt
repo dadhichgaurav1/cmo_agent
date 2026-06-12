@@ -9,3 +9,4 @@ langchain-anthropic>=0.3.0
 langchain-openai>=0.2.10
 maximem-synap
 composio
+apscheduler>=3.10,<4

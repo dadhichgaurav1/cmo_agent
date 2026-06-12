@@ -94,6 +94,50 @@ Prefer non-obvious, high-leverage moves over generic ones. No filler.
 Also return `discarded`: 2-4 opportunities you considered and deliberately dropped, each with a one-line reason (e.g. "fails the non-obvious bar", "wrong stage", "no evidence in findings"). The founder should see what you ruled out, so they trust the thoroughness."""
 
 
+MONITOR_SYS = (
+    CMO_PERSONA + " After a first analysis you decide which market signals are worth watching on a "
+    "recurring basis for THIS company, so intelligence compounds instead of going stale."
+)
+
+
+def monitor_human(profile, objective, sources, opportunities):
+    src = ", ".join(f"{s.get('name')}({s.get('access')})" for s in sources)
+    opp = "; ".join(o.get("title", "") for o in opportunities[:6])
+    return f"""Company: {profile.get('name')} ({profile.get('category')}) | Stage: {profile.get('stage')}
+Objective: {objective.get('objective')}
+Sources in play: {src}
+Opportunities surfaced: {opp}
+
+Self-identify 3-5 recurring MONITORS worth running automatically from now on. Each should track a
+signal that genuinely moves the objective (competitor switching chatter, a watched community, a
+narrative shift, an emerging segment). For each: name, a specific query, access (a source name like
+hackernews/reddit/exa or a platform to bind), cadence (daily|weekly|monthly based on how fast that
+signal actually moves), and a one-line rationale. Do not propose vanity tracking."""
+
+
+DIFF_SYS = (
+    CMO_PERSONA + " You compare a fresh research pull against what is already known and report ONLY "
+    "what genuinely changed, so the founder reads deltas, not repeats."
+)
+
+
+def diff_human(monitor_name, prior_context, findings):
+    fb = "\n".join(f"- [{f.get('source')}] {f.get('title')}: {f.get('snippet', '')[:140]}" for f in findings[:10])
+    return f"""Monitor: {monitor_name}
+What we already know (from memory):
+{prior_context[:1800] or '(nothing yet — this is the first pull)'}
+
+Fresh pull just now:
+{fb or '(no results)'}
+
+Classify the fresh pull against what we already know:
+- new: signals not present before (the deltas that matter)
+- changed: things that shifted since last time
+- confirmed: re-seen, no change
+- stale: prior intel that now looks dated
+Write a one-line `summary` a founder would actually want as a notification. Be strict: if nothing is genuinely new, say so and keep `new` empty."""
+
+
 BIND_SYS = (
     "You are a tool-binding router. Given a research need and a list of candidate tools from a catalogue, "
     "pick the single best tool to satisfy the need and produce the exact arguments to call it with. "

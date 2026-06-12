@@ -58,7 +58,8 @@ async def main():
         check("memory: bootstrap + record_turn + recall (no errors)", False, str(e)[:90])
 
     routes = set(r.path for r in appmain.app.routes if hasattr(r, "path"))
-    need = {"/api/health", "/api/analyze/stream", "/api/chat", "/api/research", "/api/ui/render"}
+    need = {"/api/health", "/api/analyze/stream", "/api/chat", "/api/research", "/api/ui/render",
+            "/api/memory/{slug}", "/api/monitors/{slug}", "/api/monitors/{slug}/run", "/api/changelog/{slug}"}
     check("api: all routes registered", need <= routes, f"{len(routes & need)}/{len(need)}")
 
     print(f"   composio client constructs: {composio_tools.available()}")
@@ -97,6 +98,26 @@ async def main():
               gen.name if gen else "none")
         if gen:
             os.remove(os.path.join(BASE, "app", "skills", gen.name + ".json"))
+
+    # --- Addendum 1: monitors + scheduler + Synap diff ---
+    from app import monitors
+    monitors.set_runner(graph.run_monitor)
+    sched_ok = monitors.start_scheduler()
+    check("monitors: in-process scheduler starts", sched_ok)
+    jobs = [{"name": "itest watch", "query": "email api", "access": "hackernews",
+             "cadence": "weekly", "rationale": "test"}]
+    monitors.save_plan("itest", jobs)
+    plan = monitors.get_plan("itest")
+    check("monitors: plan persists + reloads", len(plan.get("jobs", [])) == 1, plan.get("updated_at", ""))
+    full = await memory.recall_full("itest", ["integration"])
+    check("memory: recall_full returns structured brain for Synap tab",
+          isinstance(full, dict) and "facts" in full and "formatted_context" in full,
+          f"active={full.get('active')} facts={len(full.get('facts', []))}")
+    if RUN_LIVE:
+        entry = await graph.run_monitor("itest", jobs[0])
+        check("LIVE: run_monitor diffs + writes a changelog entry",
+              isinstance(entry, dict) and "summary" in entry and entry.get("monitor") == "itest watch",
+              entry.get("summary", "")[:60])
 
     # --- Addendum 3: reasoning ledger ---
     from app.schemas import PlanOut, SynthesisOut

@@ -71,6 +71,45 @@ class Memory:
         data = _load().get(customer_id)
         return json.dumps(data)[:2000] if data else ""
 
+    # --- structured recall for the Synap tab (facts / episodes / temporal events) ---
+    async def recall_full(self, customer_id: str, queries: List[str]) -> dict:
+        await self._ensure()
+        if self.sdk:
+            try:
+                ctx = await self.sdk.customer.context.fetch(
+                    customer_id=customer_id, search_query=queries, mode="accurate"
+                )
+
+                def _listify(attr):
+                    v = getattr(ctx, attr, None) or []
+                    out = []
+                    for it in v:
+                        if isinstance(it, dict):
+                            out.append(it)
+                        elif hasattr(it, "model_dump"):
+                            out.append(it.model_dump())
+                        else:
+                            out.append({"text": str(it)})
+                    return out
+
+                return {
+                    "active": True,
+                    "formatted_context": getattr(ctx, "formatted_context", "") or "",
+                    "facts": _listify("facts"),
+                    "episodes": _listify("episodes"),
+                    "temporal_events": _listify("temporal_events"),
+                }
+            except Exception:
+                pass
+        # local fallback: surface the JSON brain grouped by kind
+        data = _load().get(customer_id, {})
+        items = []
+        for kind, texts in (data.items() if isinstance(data, dict) else []):
+            for t in texts:
+                items.append({"kind": kind, "text": t})
+        return {"active": False, "formatted_context": "", "facts": items,
+                "episodes": [], "temporal_events": []}
+
     # --- bootstrap ingest (setup-time knowledge): one batch_create ---
     async def bootstrap(self, customer_id: str, items: List[Dict[str, Any]]):
         items = [it for it in items if it.get("text")]

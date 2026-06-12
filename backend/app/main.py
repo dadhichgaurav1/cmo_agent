@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from app import graph as agent_graph
 from app import models as M
+from app import monitors
 from app import tools as T
 from app.memory import memory, conversation_id_for
 
@@ -24,9 +25,43 @@ app.add_middleware(
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "..", "cache")
 
 
+@app.on_event("startup")
+async def _startup():
+    # Addendum 1: the graph runs monitors, the scheduler fires them, monitors.py bridges the two.
+    monitors.set_runner(agent_graph.run_monitor)
+    monitors.start_scheduler()
+
+
 @app.get("/api/health")
 async def health():
     return {"ok": True, "service": "cmo-cofounder", "phase": 1}
+
+
+@app.get("/api/memory/{slug}")
+async def memory_view(slug: str):
+    """Addendum 5: the company's durable Synap brain, for the Memory tab."""
+    full = await memory.recall_full(slug, [slug, "objective", "adjacencies", "channels", "monitors"])
+    full["conversation_id"] = conversation_id_for(slug)
+    return full
+
+
+@app.get("/api/monitors/{slug}")
+async def monitors_view(slug: str):
+    plan = monitors.get_plan(slug)
+    return {"jobs": plan.get("jobs", []), "updated_at": plan.get("updated_at", ""),
+            "changelog": monitors.get_changelog(slug)}
+
+
+@app.post("/api/monitors/{slug}/run")
+async def monitors_run(slug: str):
+    """Manually fire every monitor now (demo-safe path); returns the deltas produced."""
+    entries = await monitors.run_now(slug)
+    return {"ran": len(entries), "entries": entries, "changelog": monitors.get_changelog(slug)}
+
+
+@app.get("/api/changelog/{slug}")
+async def changelog_view(slug: str):
+    return {"changelog": monitors.get_changelog(slug)}
 
 
 def _sse(ev: dict) -> str:
