@@ -98,7 +98,7 @@ async def source_strategy(state: S, config) -> S:
         prompts.sources_human(state["profile"], state["objective"]), SourceStrategy,
     )
     data = out.model_dump()
-    await emit({"type": "sources", "label": f"{data.get('company_type', '')} — {len(data.get('sources', []))} sources",
+    await emit({"type": "sources", "label": f"{data.get('company_type', '')} · {len(data.get('sources', []))} sources",
                 "data": data, "model": name})
     return {"sources": data.get("sources", [])}
 
@@ -239,7 +239,7 @@ async def remember(state: S, config) -> S:
     rid = state.get("run_id", "")
     obj = state.get("objective", {})
     prof = state.get("profile", {})
-    items = [{"text": f"Objective: {obj.get('objective')} — {obj.get('reasoning')}", "kind": "objective", "run_id": rid}]
+    items = [{"text": f"Objective: {obj.get('objective')}. {obj.get('reasoning')}", "kind": "objective", "run_id": rid}]
     if prof:
         items.append({
             "text": (f"Profile: {prof.get('name')} ({prof.get('category')}), stage {prof.get('stage')}, "
@@ -247,7 +247,7 @@ async def remember(state: S, config) -> S:
             "kind": "profile", "run_id": rid,
         })
     for o in state.get("opportunities", [])[:8]:
-        items.append({"text": f"{o.get('type')} opportunity — {o.get('title')}: {o.get('why')}",
+        items.append({"text": f"{o.get('type')} opportunity, {o.get('title')}: {o.get('why')}",
                       "kind": "opportunity", "url": o.get("thread_url", ""), "run_id": rid})
     for a in state.get("artifacts", []):
         items.append({"text": f"Draft ({a.get('channel')}) - {a.get('title')}\n{(a.get('body') or '')[:600]}",

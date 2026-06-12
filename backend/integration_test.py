@@ -41,6 +41,11 @@ async def main():
         types = set(e["type"] for e in events)
         ok = {"objective", "sources", "opportunities", "radar", "artifact", "done"} <= types
         check("cache: resend-com.json complete", ok, f"{len(events)} events")
+        # the addendum surfaces must be present so cached-mode demos them
+        addenda = {"discarded", "skill_bound", "monitors", "capabilities"}
+        check("cache: includes addendum event types", addenda <= types, ", ".join(sorted(addenda & types)))
+        blob = json.dumps(events)
+        check("cache: no em-dashes in any cached content", "—" not in blob and "–" not in blob)
     except Exception as e:
         check("cache: resend-com.json complete", False, str(e)[:80])
 
