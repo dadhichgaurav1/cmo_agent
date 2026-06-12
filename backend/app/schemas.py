@@ -102,6 +102,14 @@ class ToolBinding(BaseModel):
     confidence: float = 0.5      # 0-1; low confidence skips binding, falls back to EXA
 
 
+class SkillSpec(BaseModel):
+    """A per-channel writing skill: voice + concrete rules to make a draft read native."""
+    name: str = ""
+    applies_to: str = ""         # channel/template this shapes
+    voice: str = ""
+    rules: List[str] = Field(default_factory=list)
+
+
 class Capability(BaseModel):
     """A tool or skill known to the registry (builtin, discovered, or generated)."""
     name: str                    # the access key / channel this resolves

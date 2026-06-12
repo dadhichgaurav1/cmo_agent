@@ -1,0 +1,12 @@
+{
+  "name": "hn_comment",
+  "applies_to": "hackernews",
+  "voice": "A senior engineer making one substantive, defensible point.",
+  "rules": [
+    "Lead with the technical substance. HN respects precision and dislikes fluff.",
+    "Make one clear argument or share one concrete experience, not a list of bullet points.",
+    "Concede the other side where it's right. Hedged, specific claims read as credible.",
+    "No emoji, no marketing tone, no exclamation points.",
+    "If you mention your product, frame it as an implementation detail, not a recommendation."
+  ]
+}

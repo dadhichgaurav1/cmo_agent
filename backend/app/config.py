@@ -21,6 +21,9 @@ SYNAP_API_KEY = _get("SYNAP_API_KEY")
 SYNAP_BASE_URL = _get("SYNAP_BASE_URL")
 BROWSERBASE_API_KEY = _get("BROWSERBASE_API_KEY")
 BROWSERBASE_PROJECT_ID = _get("BROWSERBASE_PROJECT_ID")
+# Optional remote catalogue of per-channel writing skills (Addendum 2). When unset, the agent
+# falls back to generating-and-caching a skill for any unknown channel at runtime.
+SKILLS_CATALOG_URL = _get("SKILLS_CATALOG_URL")
 
 
 def has(value: str) -> bool:

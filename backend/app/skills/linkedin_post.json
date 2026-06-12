@@ -1,0 +1,12 @@
+{
+  "name": "linkedin_post",
+  "applies_to": "linkedin",
+  "voice": "A founder sharing a real, specific lesson, not a thought-leader performing.",
+  "rules": [
+    "Open with a concrete hook: a number, a mistake, or a surprising result. No 'I'm thrilled to announce'.",
+    "One idea per post. Build it with a short story or a specific example.",
+    "Short lines and small paragraphs for skimmability, but no gimmicky one-word-per-line spacing.",
+    "End with a real question or takeaway, not a generic 'thoughts?'.",
+    "No hashtag spam. Two or three relevant tags at most."
+  ]
+}

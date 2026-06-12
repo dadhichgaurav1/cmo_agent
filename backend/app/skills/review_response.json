@@ -1,0 +1,12 @@
+{
+  "name": "review_response",
+  "applies_to": "review",
+  "voice": "A founder who reads every review and means it.",
+  "rules": [
+    "Thank them specifically, referencing the actual detail they raised.",
+    "Own any problem directly. No defensiveness, no corporate hedging.",
+    "Say what you're doing about it, concretely, if anything.",
+    "Keep it short and human. Two or three sentences usually.",
+    "No canned-template phrasing like 'we value your feedback'."
+  ]
+}

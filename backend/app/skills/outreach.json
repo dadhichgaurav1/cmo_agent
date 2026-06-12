@@ -1,0 +1,12 @@
+{
+  "name": "outreach",
+  "applies_to": "outreach",
+  "voice": "A founder sending a short, specific note to one person.",
+  "rules": [
+    "Reference something specific and true about the recipient. No mail-merge tone.",
+    "State why you're reaching out in the first line. Respect their time.",
+    "One clear ask, easy to say yes or no to.",
+    "Keep it under 90 words. Short reads as confident.",
+    "No flattery, no buzzwords, no 'just circling back'."
+  ]
+}

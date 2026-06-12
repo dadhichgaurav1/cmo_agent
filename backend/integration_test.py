@@ -77,6 +77,27 @@ async def main():
     check("capabilities: non-builtin access binds-or-falls-back (never empty)", len(found) > 0,
           f"{len(found)} findings, {len(bound_events)} tool_bound events")
 
+    # --- Addendum 2: em-dash ban + per-channel skills ---
+    from app import humanize, skills
+    from app.schemas import Opportunity
+    dashed = humanize.humanize("We built this — fast, scaling 10—20 — and shipped it--today.")
+    check("humanize: strips every em/en dash", "—" not in dashed and "–" not in dashed and "--" not in dashed, dashed)
+    o = Opportunity(title="A — B", why="x — y", steps=["one — two"])
+    humanize.scrub(o)
+    check("humanize: scrub cleans nested structured fields",
+          "—" not in (o.title + o.why + "".join(o.steps)))
+    h = await skills.resolve_skill("humanizer")
+    r = await skills.resolve_skill("reddit_reply")
+    check("skills: humanizer + per-channel skill resolve from local catalogue",
+          bool(h and h.rules) and bool(r and r.applies_to == "reddit"),
+          f"humanizer={bool(h)} reddit={bool(r)}")
+    if RUN_LIVE:
+        gen = await skills.resolve_skill("substack_note")  # not local -> must generate-and-cache
+        check("LIVE: skills generate-and-cache for an unknown channel", bool(gen and gen.rules),
+              gen.name if gen else "none")
+        if gen:
+            os.remove(os.path.join(BASE, "app", "skills", gen.name + ".json"))
+
     if RUN_LIVE:
         ex = await tools.exa_search("resend email api", 2)
         check("LIVE: exa search", len(ex) > 0, f"{len(ex)} results")

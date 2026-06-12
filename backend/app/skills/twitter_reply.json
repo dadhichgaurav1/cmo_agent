@@ -1,0 +1,12 @@
+{
+  "name": "twitter_reply",
+  "applies_to": "twitter",
+  "voice": "Sharp and conversational, one clear thought.",
+  "rules": [
+    "One idea, under 280 characters. Cut every word that isn't load-bearing.",
+    "No thread unless the point genuinely needs it. Most don't.",
+    "Reply to the actual tweet, don't pivot to your pitch.",
+    "No hashtags in replies. They read as spam.",
+    "A specific detail beats a clever line."
+  ]
+}

@@ -6,7 +6,7 @@ prefixed ``pioneer/`` when Pioneer served the request so it is visible in the de
 """
 from typing import Tuple
 
-from app import config
+from app import config, humanize
 
 # task -> (provider, model)
 ROUTING = {
@@ -71,7 +71,7 @@ async def run_structured(task, system, human, schema, temperature: float = 0.3, 
             model, name = get_model(task, temperature, max_tokens, pioneer)
             structured = model.with_structured_output(schema)
             result = await structured.ainvoke([("system", system), ("human", human)])
-            return result, _label(name, pioneer)
+            return humanize.scrub(result), _label(name, pioneer)  # no em-dashes in any field
         except Exception as exc:  # noqa: BLE001 - fall through to native provider
             last = exc
     raise last
@@ -87,7 +87,7 @@ async def run_text(task, system, human, temperature: float = 0.4, max_tokens: in
             content = resp.content
             if isinstance(content, list):  # some providers return content blocks
                 content = " ".join(c.get("text", "") if isinstance(c, dict) else str(c) for c in content)
-            return content, _label(name, pioneer)
+            return humanize.humanize(content), _label(name, pioneer)  # no em-dashes
         except Exception as exc:  # noqa: BLE001 - fall through to native provider
             last = exc
     raise last
