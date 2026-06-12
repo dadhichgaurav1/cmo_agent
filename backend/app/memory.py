@@ -1,11 +1,16 @@
-"""Maximem Synap memory wrapper with a local JSON fallback so the agent always runs.
+"""Maximem Synap memory with a local JSON fallback so the agent always runs.
 
-customer_id = the analyzed company (the compounding "market brain").
-user_id = the founder.
+Two ingestion paths (per Synap's model):
+  - bootstrap (setup-time)  -> memories.batch_create  (the company's durable market brain)
+  - conversational (runtime) -> conversation.record_message + conversation.context.fetch (founder chat)
+
+customer_id = the analyzed company.  user_id = the founder.
 """
 import json
 import os
-from typing import List
+import uuid
+from datetime import datetime, timezone
+from typing import Any, Dict, List
 
 from app import config
 
@@ -29,6 +34,11 @@ def _save(data: dict) -> None:
         pass
 
 
+def conversation_id_for(key: str) -> str:
+    """Stable UUID per company so chat turns share one conversation."""
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, "cmo-cofounder/" + key))
+
+
 class Memory:
     def __init__(self):
         self.sdk = None
@@ -47,6 +57,7 @@ class Memory:
             self.sdk = None
             self.enabled = False
 
+    # --- customer-scoped retrieval (run start) ---
     async def recall(self, customer_id: str, queries: List[str]) -> str:
         await self._ensure()
         if self.sdk:
@@ -60,24 +71,60 @@ class Memory:
         data = _load().get(customer_id)
         return json.dumps(data)[:2000] if data else ""
 
-    async def ingest(self, customer_id: str, kind: str, text: str, url: str = "", run_id: str = ""):
+    # --- bootstrap ingest (setup-time knowledge): one batch_create ---
+    async def bootstrap(self, customer_id: str, items: List[Dict[str, Any]]):
+        items = [it for it in items if it.get("text")]
+        if not items:
+            return
         await self._ensure()
         if self.sdk:
             try:
-                await self.sdk.memories.create(
-                    document=text,
-                    document_type="document",
-                    customer_id=customer_id,
-                    user_id=USER_ID,
-                    mode="fast",
-                    metadata={"kind": kind, "source_url": url, "run_id": run_id},
-                )
+                from maximem_synap import CreateMemoryRequest
+                now = datetime.now(timezone.utc)
+                docs = [
+                    CreateMemoryRequest(
+                        document=it["text"],
+                        document_type="document",
+                        customer_id=customer_id,
+                        user_id=USER_ID,
+                        document_created_at=now,
+                        metadata={"kind": it.get("kind", ""), "source_url": it.get("url", ""), "run_id": it.get("run_id", "")},
+                    )
+                    for it in items
+                ]
+                await self.sdk.memories.batch_create(documents=docs, fail_fast=False)
                 return
             except Exception:
                 pass
         data = _load()
-        data.setdefault(customer_id, {}).setdefault(kind, []).append(text[:1000])
+        for it in items:
+            data.setdefault(customer_id, {}).setdefault(it.get("kind", "note"), []).append(it["text"][:1000])
         _save(data)
+
+    # --- conversational ingest + retrieval (founder chat) ---
+    async def record_turn(self, conversation_id: str, role: str, content: str, customer_id: str):
+        await self._ensure()
+        if self.sdk:
+            try:
+                await self.sdk.conversation.record_message(
+                    conversation_id=conversation_id, role=role, content=content,
+                    user_id=USER_ID, customer_id=customer_id,
+                )
+            except Exception:
+                pass
+
+    async def recall_conversation(self, conversation_id: str, customer_id: str, query: str) -> str:
+        await self._ensure()
+        if self.sdk:
+            try:
+                ctx = await self.sdk.conversation.context.fetch(
+                    conversation_id=conversation_id, user_id=USER_ID, customer_id=customer_id,
+                    search_query=[query], mode="fast",
+                )
+                return getattr(ctx, "formatted_context", "") or ""
+            except Exception:
+                pass
+        return ""
 
 
 memory = Memory()

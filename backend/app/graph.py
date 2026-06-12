@@ -184,18 +184,25 @@ async def draft(state: S, config) -> S:
 
 async def remember(state: S, config) -> S:
     emit = _emit(config)
-    await emit({"type": "step", "label": "Saving to Synap memory", "model": "synap"})
+    await emit({"type": "step", "label": "Bootstrapping company memory (Synap)", "model": "synap"})
     cid = state["slug"]
     rid = state.get("run_id", "")
     obj = state.get("objective", {})
-    try:
-        await memory.ingest(cid, "objective", f"Objective: {obj.get('objective')} — {obj.get('reasoning')}", run_id=rid)
-        for o in state.get("opportunities", [])[:6]:
-            await memory.ingest(cid, "opportunity", f"{o.get('title')}: {o.get('why')}", url=o.get("thread_url", ""), run_id=rid)
-        for a in state.get("artifacts", []):
-            await memory.ingest(cid, "draft", f"{a.get('title')}\n{a.get('body')}", run_id=rid)
-    except Exception:
-        pass
+    prof = state.get("profile", {})
+    items = [{"text": f"Objective: {obj.get('objective')} — {obj.get('reasoning')}", "kind": "objective", "run_id": rid}]
+    if prof:
+        items.append({
+            "text": (f"Profile: {prof.get('name')} ({prof.get('category')}), stage {prof.get('stage')}, "
+                     f"ICP {prof.get('icp')}, competitors: {', '.join(prof.get('competitors', []))}"),
+            "kind": "profile", "run_id": rid,
+        })
+    for o in state.get("opportunities", [])[:8]:
+        items.append({"text": f"{o.get('type')} opportunity — {o.get('title')}: {o.get('why')}",
+                      "kind": "opportunity", "url": o.get("thread_url", ""), "run_id": rid})
+    for a in state.get("artifacts", []):
+        items.append({"text": f"Draft ({a.get('channel')}) — {a.get('title')}\n{(a.get('body') or '')[:600]}",
+                      "kind": "draft", "run_id": rid})
+    await memory.bootstrap(cid, items)  # one batch_create = the company's durable market brain
     await emit({"type": "done", "label": "Done",
                 "data": {"opportunities": state.get("opportunities", []), "artifacts": state.get("artifacts", [])}})
     return {}

@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from app import graph as agent_graph
 from app import models as M
 from app import tools as T
-from app.memory import memory
+from app.memory import memory, conversation_id_for
 
 app = FastAPI(title="CMO Cofounder")
 app.add_middleware(
@@ -86,11 +86,14 @@ class ChatBody(BaseModel):
 @app.post("/api/chat")
 async def chat(body: ChatBody):
     slug = agent_graph.slugify(body.url)
-    ctx = await memory.recall(slug, [body.message])
+    conv = conversation_id_for(slug)
+    await memory.record_turn(conv, "user", body.message, slug)              # conversational ingest
+    ctx = await memory.recall_conversation(conv, slug, body.message) or await memory.recall(slug, [body.message])
     system = ("You are the founder's CMO cofounder copilot. Be concrete, brief, and specific to THIS company. "
               "Think adjacencies, wedges, channels and stage — never generic advice.")
     human = (f"Company context from memory:\n{ctx[:1500]}\n\n" if ctx else "") + f"Founder asks: {body.message}"
     reply, name = await M.run_text("chat", system, human, max_tokens=700)
+    await memory.record_turn(conv, "assistant", reply, slug)                # record the reply turn
     return {"reply": reply, "model": name}
 
 
