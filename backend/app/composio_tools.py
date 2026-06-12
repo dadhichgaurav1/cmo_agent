@@ -1,22 +1,17 @@
-"""Composio integration — routes community searches (Hacker News / Reddit) through
-Composio's toolkits, making web-use a genuine Composio action.
+"""Composio integration — routes Hacker News search through Composio's toolkit, making
+web-use a genuine Composio action. Verified live: HACKERNEWS_SEARCH_POSTS returns Algolia hits.
 
-Activates automatically when COMPOSIO_API_KEY is valid; otherwise callers fall back
-to the direct transports in tools.py. SDK: composio 1.x — `tools.execute(slug, arguments, user_id=)`.
+Activates when COMPOSIO_API_KEY is valid; callers fall back to direct transports otherwise.
+Reddit has no clean post-search action (only REDDIT_GET_SUBREDDITS_SEARCH), so reddit falls back to EXA.
 """
 import asyncio
+import re
 from typing import List
 
 from app import config
 from app.schemas import Finding
 
-# Composio tool slugs (toolkit_action). Confirm against the live account once the key is valid:
-#   python -c "from composio import Composio; \
-#     print([t.slug for t in Composio().tools.get_raw_composio_tools(toolkits=['HACKERNEWS'])])"
-SLUGS = {
-    "hackernews": "HACKERNEWS_SEARCH_POSTS",
-    "reddit": "REDDIT_SEARCH_ACROSS_SUBREDDITS",
-}
+SLUGS = {"hackernews": "HACKERNEWS_SEARCH_POSTS"}
 USER_ID = "cmo-cofounder"
 
 _client = None
@@ -50,30 +45,44 @@ async def composio_search(toolkit: str, query: str, num: int = 4) -> List[Findin
     slug = SLUGS.get(toolkit)
     if not client or not slug:
         return []
-    try:
-        def _call():
-            return client.tools.execute(slug=slug, arguments={"query": query}, user_id=USER_ID)
-        resp = await asyncio.to_thread(_call)
-        return _parse(resp, toolkit)[:num]
-    except Exception:
-        return []
+    # Algolia (behind the HN toolkit) ANDs terms — retry with top keywords if a long query is empty.
+    queries = [query]
+    short = " ".join(query.split()[:3])
+    if short and short != query:
+        queries.append(short)
+    for q in queries:
+        try:
+            def _call(qq=q):
+                return client.tools.execute(
+                    slug=slug,
+                    arguments={"query": qq},
+                    user_id=USER_ID,
+                    dangerously_skip_version_check=True,
+                )
+            resp = await asyncio.to_thread(_call)
+            hits = _parse_hn(resp)
+            if hits:
+                return hits[:num]
+        except Exception:
+            return []
+    return []
 
 
-def _parse(resp, toolkit: str) -> List[Finding]:
-    data = getattr(resp, "data", None)
-    if data is None and isinstance(resp, dict):
-        data = resp.get("data", resp)
-    data = data or {}
-    items = (data.get("results") or data.get("hits") or data.get("posts")
-             or data.get("children") or data.get("data") or [])
+def _parse_hn(resp) -> List[Finding]:
+    data = resp.get("data") if isinstance(resp, dict) else getattr(resp, "data", {})
+    hits = (data or {}).get("hits") or (data or {}).get("results") or []
     out: List[Finding] = []
-    for it in items:
-        if not isinstance(it, dict):
+    for h in hits:
+        if not isinstance(h, dict):
             continue
+        oid = h.get("objectID")
+        title = h.get("title") or h.get("story_title") or (h.get("comment_text") or "")[:80] or "HN item"
+        url = h.get("url") or (f"https://news.ycombinator.com/item?id={oid}" if oid else "")
+        snippet = h.get("story_text") or h.get("comment_text") or h.get("title") or ""
         out.append(Finding(
-            title=str(it.get("title") or it.get("story_title") or it.get("name") or "")[:160],
-            url=it.get("url") or it.get("link") or it.get("permalink") or "",
-            snippet=str(it.get("text") or it.get("selftext") or it.get("body") or it.get("story_text") or "")[:500],
-            source=f"composio:{toolkit}",
+            title=re.sub(r"<[^>]+>", " ", str(title))[:160],
+            url=url,
+            snippet=re.sub(r"<[^>]+>", " ", str(snippet))[:500],
+            source="composio:hackernews",
         ))
     return out
