@@ -49,7 +49,8 @@ Produce EXACTLY 4 research moves, each a DIFFERENT angle. Do NOT repeatedly sear
 2. Adjacent community / channel — an adjacent community or emerging channel where the ICP gathers (not the obvious one).
 3. Emerging use-case / segment — a non-obvious segment, workflow, or use-case adjacent to the core product.
 4. Narrative / positioning shift — signal about how the category or buyer conversation is moving.
-For each: goal, a specific query, access (hackernews|reddit|exa). Prefer hackernews/reddit for real community threads."""
+For each: goal, a specific query, access. Prefer hackernews/reddit/exa for real community threads.
+If the IDEAL source for a move is a specific platform outside that set (e.g. github, producthunt, stackoverflow, g2, devto, youtube), name that platform as the access — the agent can discover and bind a tool for it at runtime. Use a platform name, not a sentence."""
 
 
 def reflect_human(objective, findings):
@@ -74,6 +75,28 @@ Produce 5-8 opportunities that ladder up to the objective. Mix two types:
 - type "engagement": a SPECIFIC thread or post to act on now — set source_name, thread_url (reuse a finding's url), template_id, and why it's worth the founder's time.
 For each: title, type, why (tie to a finding or the stage), priority (P0|P1|P2), impact (high|medium|low), effort (high|medium|low), category, steps (2-4), sources (urls).
 Prefer non-obvious, high-leverage moves over generic ones. No filler."""
+
+
+BIND_SYS = (
+    "You are a tool-binding router. Given a research need and a list of candidate tools from a catalogue, "
+    "pick the single best tool to satisfy the need and produce the exact arguments to call it with. "
+    "Map the research query onto the tool's parameter names. If no candidate genuinely fits, return an empty slug."
+)
+
+
+def bind_human(need, query, candidates):
+    lines = []
+    for c in candidates:
+        lines.append(f"- slug: {c.get('slug')} | params: {c.get('params')} | {c.get('description', '')[:160]}")
+    block = "\n".join(lines) or "(no candidates)"
+    return f"""Research need (capability the agent lacks): {need}
+Concrete query to run: {query}
+
+Candidate tools from the catalogue:
+{block}
+
+Pick the best slug for this query. Build args_json as a JSON object whose keys are the tool's parameters
+(commonly a search/query field) filled from the query. Set confidence 0-1; use <0.4 if nothing fits well."""
 
 
 def draft_human(profile, objective, opp):

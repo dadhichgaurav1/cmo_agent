@@ -91,3 +91,23 @@ class Artifact(BaseModel):
     channel: str = ""
     body: str = ""
     model_used: str = ""
+
+
+# --- Addendum 4: runtime tool discovery + binding ---
+class ToolBinding(BaseModel):
+    """The model's choice of which discovered tool to bind for a research need."""
+    slug: str = ""               # the Composio tool slug to execute
+    args_json: str = "{}"        # JSON object of arguments for that tool
+    why: str = ""                # one line: why this tool fits the need
+    confidence: float = 0.5      # 0-1; low confidence skips binding, falls back to EXA
+
+
+class Capability(BaseModel):
+    """A tool or skill known to the registry (builtin, discovered, or generated)."""
+    name: str                    # the access key / channel this resolves
+    kind: str = "tool"           # tool | skill
+    source: str = "builtin"      # builtin | composio | catalog | generated
+    bound_at: str = "plan"       # plan | runtime
+    slug: str = ""               # tool: Composio slug
+    why: str = ""
+    spec: dict = Field(default_factory=dict)  # skill: prompt augmentation; tool: arg template

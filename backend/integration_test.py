@@ -63,6 +63,20 @@ async def main():
 
     print(f"   composio client constructs: {composio_tools.available()}")
 
+    # --- Addendum 4: runtime tool discovery + binding ---
+    from app import capabilities
+    snap = capabilities.registry_snapshot()
+    builtins = {c["name"] for c in snap if c["source"] == "builtin"}
+    check("capabilities: registry exposes builtin tools", {"exa", "hackernews", "reddit"} <= builtins,
+          f"{len(snap)} capabilities")
+    # research() must never return empty for a non-builtin access (discovers/binds or falls back to EXA)
+    bound_events = []
+    async def cap_emit(e):
+        bound_events.append(e)
+    found = await capabilities.research("github", "email api developer pain", 3, cap_emit)
+    check("capabilities: non-builtin access binds-or-falls-back (never empty)", len(found) > 0,
+          f"{len(found)} findings, {len(bound_events)} tool_bound events")
+
     if RUN_LIVE:
         ex = await tools.exa_search("resend email api", 2)
         check("LIVE: exa search", len(ex) > 0, f"{len(ex)} results")

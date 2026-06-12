@@ -10,7 +10,7 @@ from typing import TypedDict
 
 from langgraph.graph import START, END, StateGraph
 
-from app import models, prompts, tools
+from app import capabilities, models, prompts, tools
 from app.memory import memory
 from app.schemas import (
     Artifact, ProfileObjective, PlanOut, ReflectOut, SourceStrategy, SynthesisOut,
@@ -105,7 +105,9 @@ async def act(state: S, config) -> S:
     item = plan_items[i]
     access = item.get("access", "exa")
     await emit({"type": "step", "label": f"Researching: {item.get('query', '')}", "model": access})
-    found = await tools.run_tool(access, item.get("query", ""), num=4)
+    # capabilities.research handles builtin sources directly and discovers+binds any
+    # non-builtin source the planner asked for (Addendum 4).
+    found = await capabilities.research(access, item.get("query", ""), 4, emit)
     findings = list(state.get("findings", []))
     for f in found:
         findings.append(f.model_dump())
@@ -203,6 +205,8 @@ async def remember(state: S, config) -> S:
         items.append({"text": f"Draft ({a.get('channel')}) — {a.get('title')}\n{(a.get('body') or '')[:600]}",
                       "kind": "draft", "run_id": rid})
     await memory.bootstrap(cid, items)  # one batch_create = the company's durable market brain
+    await emit({"type": "capabilities", "label": "Capabilities used this run",
+                "data": capabilities.registry_snapshot()})
     await emit({"type": "done", "label": "Done",
                 "data": {"opportunities": state.get("opportunities", []), "artifacts": state.get("artifacts", [])}})
     return {}

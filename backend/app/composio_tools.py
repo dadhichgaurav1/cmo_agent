@@ -86,3 +86,121 @@ def _parse_hn(resp) -> List[Finding]:
             source="composio:hackernews",
         ))
     return out
+
+
+# --- Addendum 4: runtime tool discovery + binding over the full Composio catalogue ---
+
+def discover(need: str, limit: int = 5) -> List[dict]:
+    """Search the Composio tool catalogue for tools matching a capability the agent lacks.
+    Returns lightweight candidate descriptors the model can choose from."""
+    client = _get_client()
+    if not client:
+        return []
+    try:
+        items = client.tools.get_raw_composio_tools(search=need, limit=limit)
+    except Exception:
+        return []
+    out: List[dict] = []
+    for it in items or []:
+        d = it if isinstance(it, dict) else (it.model_dump() if hasattr(it, "model_dump") else None)
+        if not d:
+            continue
+        props = ((d.get("input_parameters") or {}).get("properties")) or {}
+        out.append({
+            "slug": d.get("slug") or d.get("name", ""),
+            "description": str(d.get("description") or d.get("human_description") or "")[:300],
+            "toolkit": (d.get("toolkit") or {}).get("slug") if isinstance(d.get("toolkit"), dict) else d.get("toolkit"),
+            "no_auth": bool(d.get("no_auth")),
+            "params": list(props.keys())[:12],
+        })
+    return out
+
+
+async def execute_tool(slug: str, arguments: dict, num: int = 4) -> List[Finding]:
+    """Execute an arbitrary discovered Composio tool and coerce its output into Findings."""
+    client = _get_client()
+    if not client or not slug:
+        return []
+    try:
+        def _call():
+            return client.tools.execute(
+                slug=slug, arguments=arguments or {}, user_id=USER_ID,
+                dangerously_skip_version_check=True,
+            )
+        resp = await asyncio.to_thread(_call)
+    except Exception:
+        return []
+    return _parse_generic(resp, slug)[:num]
+
+
+def _as_dict(resp):
+    if isinstance(resp, dict):
+        return resp
+    if hasattr(resp, "model_dump"):
+        try:
+            return resp.model_dump()
+        except Exception:
+            pass
+    return {"data": getattr(resp, "data", {})}
+
+
+def _collect_records(obj, depth=0):
+    """Walk an arbitrary tool response and yield the first meaningful list of dict records."""
+    if depth > 4:
+        return []
+    if isinstance(obj, list):
+        dicts = [x for x in obj if isinstance(x, dict)]
+        if dicts:
+            return dicts
+        for x in obj:
+            found = _collect_records(x, depth + 1)
+            if found:
+                return found
+        return []
+    if isinstance(obj, dict):
+        # prefer common collection keys
+        for key in ("hits", "results", "items", "data", "posts", "issues", "edges", "children", "records"):
+            if key in obj:
+                found = _collect_records(obj[key], depth + 1)
+                if found:
+                    return found
+        for v in obj.values():
+            found = _collect_records(v, depth + 1)
+            if found:
+                return found
+    return []
+
+
+def _pick(d: dict, keys, default=""):
+    for k in keys:
+        v = d.get(k)
+        if isinstance(v, str) and v.strip():
+            return v
+        if isinstance(v, dict):  # reddit-style {"title": ...} nesting handled by caller
+            continue
+    return default
+
+
+def _parse_generic(resp, slug: str) -> List[Finding]:
+    data = _as_dict(resp)
+    records = _collect_records(data)
+    out: List[Finding] = []
+    for r in records:
+        if not isinstance(r, dict):
+            continue
+        # unwrap reddit-style {"data": {...}} children
+        inner = r.get("data") if isinstance(r.get("data"), dict) else r
+        title = _pick(inner, ("title", "name", "story_title", "headline", "subject", "full_name"))
+        url = _pick(inner, ("url", "html_url", "permalink", "link", "web_url"))
+        if url.startswith("/r/") or url.startswith("/u/"):
+            url = "https://www.reddit.com" + url
+        snippet = _pick(inner, ("text", "selftext", "body", "description", "comment_text", "story_text", "abstract"))
+        if not (title or snippet):
+            continue
+        out.append(Finding(
+            title=re.sub(r"<[^>]+>", " ", str(title or url or "result"))[:160],
+            url=str(url)[:400],
+            snippet=re.sub(r"<[^>]+>", " ", str(snippet))[:500],
+            source=f"composio:{slug.lower()}",
+        ))
+    return out
