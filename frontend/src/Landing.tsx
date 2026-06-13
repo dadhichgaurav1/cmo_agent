@@ -16,6 +16,7 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
       <Returns />
       <Features />
       <HowItWorks onEnter={onEnter} />
+      <Compare />
       <CTA onEnter={onEnter} />
       <Footer />
     </div>
@@ -158,13 +159,14 @@ function Features() {
     <section className="lp-features" id="features">
       <div className="lp-section-head">
         <span className="lp-kicker">What it does</span>
-        <h2>It does the CMO work, then shows you the receipts.</h2>
+        <h2>One job, done end to end: get into the right room with the right words.</h2>
       </div>
 
+      {/* The one thing — locate + draft, the headline capability */}
       <Feature
-        verb="Locate"
-        title="Find where your customers already are."
-        body="StratCMO maps the subreddits, communities and threads your buyers actually use — and tells you how warm each one is before you spend a minute there."
+        verb="Locate + draft"
+        title="Find the room. Walk in with the right line."
+        body="StratCMO maps the subreddits, communities and threads your buyers actually use — ranked by how warm each one is — then drafts the reply for the ones worth joining, in a voice that fits the room. Copy it, edit it, send it."
         art={
           <div className="lp-fart">
             <div className="lp-mock-sources">
@@ -173,17 +175,6 @@ function Features() {
               <span className="lp-mock-chip">Hacker News <em>earn it</em></span>
               <span className="lp-mock-chip">Lenny's Slack <em>gated</em></span>
             </div>
-          </div>
-        }
-      />
-
-      <Feature
-        flip
-        verb="Draft"
-        title="Show up with the reply that earns a response."
-        body="For every thread worth joining, the agent drafts a reply in a voice that fits the room — specific, helpful, never salesy. Copy it, edit it, send it."
-        art={
-          <div className="lp-fart">
             <div className="lp-mock-draft tall">
               <div className="lp-mock-drafthead">Drafted reply <span className="lp-mini-badge">sonnet</span></div>
               <div className="lp-mock-draftbody">
@@ -197,63 +188,55 @@ function Features() {
         }
       />
 
-      <Feature
-        verb="Prioritize"
-        title="Get the three moves worth making this week."
-        body="Opportunities arrive ranked P0 to P2, each with impact, effort and concrete steps — so you start at the top and execute, instead of triaging a list."
-        art={
-          <div className="lp-fart">
-            <div className="lp-mock-move"><span className="pri p0">P0</span><span>Launch a deliverability teardown on Hacker News</span></div>
-            <div className="lp-mock-move"><span className="pri p1">P1</span><span>Seed an Indie Hackers thread on migration pain</span></div>
-            <div className="lp-mock-move"><span className="pri p2">P2</span><span>Publish a “Postmark vs.” comparison page</span></div>
-          </div>
-        }
-      />
+      {/* …and it keeps working — secondary capabilities, demoted to a compact row */}
+      <div className="lp-subhead"><h3>…and it keeps working for you.</h3></div>
+      <div className="lp-minigrid">
+        <MiniFeature
+          verb="Prioritize"
+          title="The moves worth making, ranked."
+          body="Opportunities arrive ranked P0–P2 with impact, effort and steps — a plan to execute, not a list to triage."
+          art={
+            <>
+              <div className="lp-mock-move"><span className="pri p0">P0</span><span>Deliverability teardown on Hacker News</span></div>
+              <div className="lp-mock-move"><span className="pri p1">P1</span><span>Seed an Indie Hackers migration thread</span></div>
+              <div className="lp-mock-move"><span className="pri p2">P2</span><span>Ship a “Postmark vs.” page</span></div>
+            </>
+          }
+        />
+        <MiniFeature
+          verb="Remember"
+          title="Run #2 is sharper than #1."
+          body="Synap — the company's durable memory — recalls what's known, reasons, then writes back, so context compounds across runs."
+          art={
+            <>
+              <div className="lp-mock-loop">
+                <span className="lp-loopnode">recall</span><span className="lp-looparrow">→</span>
+                <span className="lp-loopnode">reason</span><span className="lp-looparrow">→</span>
+                <span className="lp-loopnode write">write</span><span className="lp-looparrow">↺</span>
+              </div>
+              <div className="lp-mock-memline">128 facts · 9 episodes · connected</div>
+            </>
+          }
+        />
+        <MiniFeature
+          verb="Watch"
+          title="Read what changed, not another dashboard."
+          body="The agent sets recurring monitors and surfaces only what's new — a feed of changes, not noise."
+          art={
+            <>
+              <div className="lp-mock-monitor">
+                <div className="lp-mock-monitorhead"><b>Competitor pricing</b><span className="lp-cadence">weekly</span></div>
+              </div>
+              <div className="lp-mock-delta">+ Mailgun cut its free tier — 2 threads already complaining.</div>
+            </>
+          }
+        />
+      </div>
 
-      <Feature
-        flip
-        verb="Remember"
-        title="Run #2 is sharper than run #1."
-        body="Synap is the company's durable market brain. Every run recalls what's known, reasons, then writes back — so context compounds instead of resetting each time."
-        art={
-          <div className="lp-fart">
-            <div className="lp-mock-loop">
-              <span className="lp-loopnode">recall</span><span className="lp-looparrow">→</span>
-              <span className="lp-loopnode">reason</span><span className="lp-looparrow">→</span>
-              <span className="lp-loopnode write">write</span><span className="lp-looparrow">↺</span>
-            </div>
-            <div className="lp-mock-memline">128 facts · 9 episodes · Synap connected</div>
-          </div>
-        }
-      />
-
-      <Feature
-        verb="Watch"
-        title="Read what changed, not another dashboard."
-        body="The agent decides what's worth watching and sets recurring monitors. Each run compares against what it already knew and surfaces only what's new — a feed of changes, not noise."
-        art={
-          <div className="lp-fart">
-            <div className="lp-mock-monitor">
-              <div className="lp-mock-monitorhead"><b>Competitor pricing moves</b><span className="lp-cadence">weekly</span></div>
-              <div className="lp-mock-monitorq">pricing or free-tier changes across Postmark, Mailgun, SendGrid</div>
-            </div>
-            <div className="lp-mock-delta">+ Mailgun dropped its free tier to 100/day — 2 threads already complaining.</div>
-          </div>
-        }
-      />
-
-      <Feature
-        flip
-        verb="Show its work"
-        title="Trust it was thorough — see what it ruled out."
-        body="A reasoning log records the ideas the agent considered and discarded, with reasons. And it binds new tools and writing skills at runtime when a task needs them."
-        art={
-          <div className="lp-fart">
-            <div className="lp-mock-discard"><div className="lp-mock-idea">Cold outbound to VP Marketing lists</div><div className="lp-mock-reason">Ruled out — wrong stage, burns reputation before product-market fit.</div></div>
-            <div className="lp-mock-discard"><div className="lp-mock-idea">Paid search on “email API”</div><div className="lp-mock-reason">Ruled out — incumbents own the auction; CAC won't clear at seed.</div></div>
-          </div>
-        }
-      />
+      <p className="lp-truststrip">
+        And every brief <b>shows its work</b> — the ideas it ruled out, with reasons, and the tools
+        it bound along the way. No black box.
+      </p>
     </section>
   )
 }
@@ -269,6 +252,19 @@ function Feature({ verb, title, body, art, flip }: {
         <p>{body}</p>
       </div>
       <div className="lp-feature-art">{art}</div>
+    </div>
+  )
+}
+
+function MiniFeature({ verb, title, body, art }: {
+  verb: string; title: string; body: string; art: React.ReactNode
+}) {
+  return (
+    <div className="lp-mini">
+      <div className="lp-verb">{verb}</div>
+      <h4>{title}</h4>
+      <p>{body}</p>
+      <div className="lp-mini-art">{art}</div>
     </div>
   )
 }
@@ -296,6 +292,50 @@ function HowItWorks({ onEnter }: { onEnter: () => void }) {
       </div>
       <div className="lp-how-cta">
         <button className="lp-btn lg" onClick={onEnter}>Run your first brief →</button>
+      </div>
+    </section>
+  )
+}
+
+function Compare() {
+  const rows = [
+    { f: 'Finds where buyers actually gather', chat: 'generic guess', dash: 'mentions only', us: true },
+    { f: 'Drafts the reply in the room’s voice', chat: 'sometimes', dash: false, us: true },
+    { f: 'Tells you what to do next, ranked', chat: false, dash: false, us: true },
+    { f: 'Remembers your company across runs', chat: false, dash: false, us: true },
+    { f: 'Reports only what changed', chat: false, dash: 'partial', us: true },
+  ]
+  const cell = (v: boolean | string) =>
+    v === true ? <span className="lp-yes">✓</span>
+      : v === false ? <span className="lp-no">—</span>
+        : <span className="lp-partial">{v}</span>
+  return (
+    <section className="lp-compare">
+      <div className="lp-section-head">
+        <span className="lp-kicker">Why not just a chatbot</span>
+        <h2>Trackers tell you what happened. A cofounder tells you what to do.</h2>
+      </div>
+      <div className="lp-table-wrap">
+        <table className="lp-table">
+          <thead>
+            <tr>
+              <th />
+              <th>Generic AI chatbot</th>
+              <th>Listening dashboard</th>
+              <th className="us">StratCMO</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.f}>
+                <td className="lp-rowlabel">{r.f}</td>
+                <td>{cell(r.chat)}</td>
+                <td>{cell(r.dash)}</td>
+                <td className="us">{cell(r.us)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </section>
   )
