@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { analyze, chatApi, researchApi, uiRender, memoryView, monitorsView, runMonitors, openInTab, openPrintable, escapeHtml } from './api'
+import { analyze, chatApi, researchApi, uiRender, landingSpec, landingPrompt, memoryView, monitorsView, runMonitors, openInTab, openPrintable, escapeHtml } from './api'
 import ActionBoard from './ActionBoard'
 import type { Ev, Profile, Objective, Source, Opp, Artifact, Discarded, Capability, MonitorJob, ChangelogEntry, MemoryView } from './types'
 
@@ -403,6 +403,10 @@ function BriefTab({ objective, profile, companyType, sources, radar, strategic, 
             <OpenUIPanel profile={profile} objective={objective} strategic={strategic} radar={radar} />
           )}
 
+          {(strategic.length > 0 || radar.length > 0) && profile && (
+            <LandingPanel profile={profile} objective={objective} />
+          )}
+
           <ChatDock url={url} />
         </main>
       </div>
@@ -638,6 +642,79 @@ function OpenUIPanel({ profile, objective, strategic, radar }: any) {
       {html
         ? <iframe className="openui-frame" srcDoc={html} title="OpenUI generated view" />
         : <div className="muted">generate a bespoke, company-specific dashboard view with OpenUI.</div>}
+    </section>
+  )
+}
+
+// #4 — generate a single-use-case landing page spec, then a copyable, stack-agnostic
+// Claude Code prompt the founder pastes into their own repo's coding agent. The prompt is
+// generated lazily, on click — not by default.
+function LandingPanel({ profile, objective }: { profile: Profile | null; objective: Objective | null }) {
+  const [useCase, setUseCase] = useState('')
+  const [spec, setSpec] = useState<any>(null)
+  const [prompt, setPrompt] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [pbusy, setPbusy] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  async function gen() {
+    setBusy(true); setPrompt('')
+    try {
+      const r = await landingSpec({ profile, objective, use_case: useCase.trim() })
+      setSpec(r.spec || null)
+    } catch { /* ignore */ }
+    setBusy(false)
+  }
+  async function genPrompt() {
+    setPbusy(true)
+    try {
+      const r = await landingPrompt(spec, profile?.name || '')
+      setPrompt(r.prompt || '')
+    } catch { /* ignore */ }
+    setPbusy(false)
+  }
+  function copyPrompt() {
+    navigator.clipboard?.writeText(prompt)
+    setCopied(true); setTimeout(() => setCopied(false), 1400)
+  }
+
+  return (
+    <section className="card">
+      <h3>Landing page <span className="muted">one use-case, handed to your coding agent</span></h3>
+      <p className="muted" style={{ marginTop: 4 }}>A dedicated page per use-case beats a generic homepage. We write the page; you paste a prompt into your repo's Claude Code and it builds it in your stack.</p>
+      <div className="landinggen">
+        <input value={useCase} onChange={(e) => setUseCase(e.target.value)} placeholder="optional: a specific use-case (else we pick the sharpest)" />
+        <button className="mini" onClick={gen} disabled={busy || !profile}>{busy ? 'writing…' : '✨ Generate page'}</button>
+      </div>
+
+      {spec && (
+        <div className="landingspec">
+          {spec.positioning_oneliner && <div className="landingpos">“{spec.positioning_oneliner}”</div>}
+          {spec.use_case && <div className="muted landinguc">for: {spec.use_case}</div>}
+          {spec.headline && <div className="landingh1">{spec.headline}</div>}
+          {spec.subhead && <div className="landingsub">{spec.subhead}</div>}
+          {Array.isArray(spec.sections) && spec.sections.length > 0 && (
+            <ol className="landingsections">
+              {spec.sections.map((s: any, i: number) => (
+                <li key={i}><b>{s.heading}</b>{s.purpose ? <span className="muted"> · {s.purpose}</span> : null}</li>
+              ))}
+            </ol>
+          )}
+          <div className="draftactions" style={{ marginTop: 12 }}>
+            <button onClick={genPrompt} disabled={pbusy}>{pbusy ? 'building prompt…' : 'Generate Claude Code prompt'}</button>
+          </div>
+        </div>
+      )}
+
+      {prompt && (
+        <div className="draft" style={{ marginTop: 12 }}>
+          <div className="drafthead">Paste this into Claude Code in your repo</div>
+          <pre className="draftbody">{prompt}</pre>
+          <div className="draftactions">
+            <button onClick={copyPrompt}>{copied ? 'copied ✓' : 'copy prompt'}</button>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

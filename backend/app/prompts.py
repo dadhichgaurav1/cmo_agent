@@ -39,6 +39,34 @@ NOT queries about the company itself or its brand name. Surface the conversation
 Each query is short and specific, the kind you would actually type into search. For each, note the intent (the kind of thread it finds)."""
 
 
+LANDING_SYS = (CMO_PERSONA + " You design single-use-case landing pages that convert, in the spirit of "
+               "'fewer problems, not more features'. You think like a PM and a marketer: one sharp use-case, "
+               "a concrete positioning line (not a feature list), and only the sections that earn their place.")
+
+
+def landing_human(profile, objective, use_case):
+    uc = (f'Target this specific use-case: "{use_case}".' if use_case
+          else "Pick the single sharpest, highest-intent use-case for this company and target only that "
+               "(a dedicated page beats a generic homepage).")
+    comps = ", ".join(profile.get("competitors", []) or [])
+    return f"""Company: {profile.get('name')} — {profile.get('one_liner')}
+Category: {profile.get('category')} | ICP: {profile.get('icp')} | Stage: {profile.get('stage')}
+Competitors: {comps}
+Objective: {objective.get('objective')}
+
+{uc}
+
+Produce a landing-page spec:
+- use_case: the one specific use-case this page is for.
+- positioning_oneliner: a concrete, memorable line (like "the tourist map of flash drives"), NOT a feature list.
+- headline + subhead that speak to the buyer's problem and search intent.
+- sections: only the ones that earn their place. For each: heading, purpose (why it's here), and the actual copy.
+- proof: trust/social-proof elements to include (logos, metrics, testimonials — name what, not placeholder text).
+- cta: the single primary call to action.
+- layout_notes: structure and flow (what's above the fold, section order, what to emphasize).
+Be specific to THIS company. No filler, no boilerplate, no em-dashes."""
+
+
 OBJECTIVE_SYS = CMO_PERSONA + " You infer a company's profile and the single right marketing objective for its stage."
 SOURCES_SYS = CMO_PERSONA + " You map a company to where its customers and influencers actually gather."
 PLAN_SYS = CMO_PERSONA + " You turn an objective into concrete research moves that hunt non-obvious wedges and adjacencies."

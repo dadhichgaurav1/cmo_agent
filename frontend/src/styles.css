@@ -477,3 +477,15 @@ body {
 @media (max-width: 720px) { .boardrow { grid-template-columns: 96px repeat(3, minmax(180px, 1fr)); } }
 .panelactions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .boardnote { font-size: 12px; }
+
+/* ── Landing page generator (#4) ──────────────────────────────────── */
+.landinggen { display: flex; gap: 10px; margin-top: 14px; }
+.landinggen input { flex: 1; font-family: var(--sans); background: var(--surface); border: 1px solid var(--line); color: var(--ink); padding: 9px 13px; border-radius: var(--radius-sm); font-size: 13.5px; outline: none; }
+.landinggen input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
+.landingspec { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+.landingpos { font-family: var(--serif); font-size: 17px; color: var(--accent-deep); font-style: italic; }
+.landinguc { font-size: 12px; margin-top: 3px; }
+.landingh1 { font-family: var(--serif); font-size: 21px; font-weight: 500; letter-spacing: -0.01em; color: var(--ink); margin-top: 12px; line-height: 1.25; }
+.landingsub { font-size: 15px; color: var(--ink-2); margin-top: 6px; line-height: 1.5; }
+.landingsections { margin: 12px 0 0; padding-left: 20px; font-size: 13.5px; color: var(--ink); }
+.landingsections li { margin: 4px 0; }

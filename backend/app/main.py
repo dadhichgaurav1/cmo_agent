@@ -31,14 +31,16 @@ from app import cards as cards_mod
 from app import config
 from app import db
 from app import graph as agent_graph
+from app import landing as landing_mod
 from app import models as M
 from app import monitors
+from app import prompts
 from app import ratelimit
 from app import tools as T
 from app import usage
 from app.auth import current_context
 from app.memory import memory, conversation_id_for
-from app.schemas import ActionCardCreate, ActionCardPatch
+from app.schemas import ActionCardCreate, ActionCardPatch, LandingSpec
 from app.tenancy import customer_scope
 
 # Per-key short-window burst caps (key = org_id, or client IP in demo mode).
@@ -471,6 +473,35 @@ async def ui_render(body: UIBody, request: Request, ctx: dict = Depends(current_
     _enforce(ctx, request, "ui")
     html, via = await _generate_ui(_ui_prompt(body))
     return {"html": html, "via": via}
+
+
+# --- #4: landing-page spec -> copyable, stack-agnostic Claude Code prompt ---
+class LandingSpecBody(BaseModel):
+    profile: dict = {}
+    objective: dict = {}
+    use_case: str = ""
+
+
+@app.post("/api/landing/spec")
+async def landing_spec(body: LandingSpecBody, request: Request, ctx: dict = Depends(current_context)):
+    """Generate a single-use-case landing page spec — the PM+marketer thinking."""
+    _enforce(ctx, request, "ui")
+    spec, name = await M.run_structured(
+        "synthesize", prompts.LANDING_SYS,
+        prompts.landing_human(body.profile, body.objective, body.use_case),
+        LandingSpec, temperature=0.5, max_tokens=2500)
+    return {"spec": spec.model_dump(), "model": name}
+
+
+class LandingPromptBody(BaseModel):
+    spec: dict
+    company: str = ""
+
+
+@app.post("/api/landing/prompt")
+async def landing_prompt(body: LandingPromptBody, ctx: dict = Depends(current_context)):
+    """Assemble the spec into one copyable, stack-agnostic Claude Code prompt (no LLM call)."""
+    return {"prompt": landing_mod.claude_prompt(body.spec, body.company)}
 
 
 # Serve the built frontend if present (single-container deploy)

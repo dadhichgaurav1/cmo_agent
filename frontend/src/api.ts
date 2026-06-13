@@ -80,6 +80,16 @@ export async function uiRender(payload: any) {
   return r.json()
 }
 
+export async function landingSpec(payload: { profile: any; objective: any; use_case?: string }) {
+  const r = await fetch('/api/landing/spec', { method: 'POST', headers: await jsonHeaders(), body: JSON.stringify(payload) })
+  return r.json()
+}
+
+export async function landingPrompt(spec: any, company: string) {
+  const r = await fetch('/api/landing/prompt', { method: 'POST', headers: await jsonHeaders(), body: JSON.stringify({ spec, company }) })
+  return r.json()
+}
+
 function slugify(url: string): string {
   const host = (url || '').toLowerCase().replace(/^https?:\/\//, '').split('/')[0]
   return host.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'company'

@@ -195,3 +195,21 @@ class CardQuery(BaseModel):
 class CardQueries(BaseModel):
     """Search queries that find live threads where the company could naturally engage."""
     queries: List[CardQuery] = Field(default_factory=list)
+
+
+# --- Landing page spec (#4): PM+marketer thinking handed to the founder's own coding agent ---
+class LandingSection(BaseModel):
+    heading: str = ""
+    purpose: str = ""            # why this section exists, for the builder agent
+    content: str = ""            # the actual copy to render
+
+
+class LandingSpec(BaseModel):
+    use_case: str = ""           # the single specific use-case this page targets
+    positioning_oneliner: str = ""  # "the tourist map of flash drives" — concrete, not a feature list
+    headline: str = ""
+    subhead: str = ""
+    sections: List[LandingSection] = Field(default_factory=list)
+    proof: List[str] = Field(default_factory=list)  # trust/social-proof elements to include
+    cta: str = ""
+    layout_notes: str = ""       # structure/flow guidance (above-the-fold, order, emphasis)
