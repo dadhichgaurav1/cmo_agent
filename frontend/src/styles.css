@@ -437,3 +437,41 @@ body {
 .lp-footer-links a { font-size: 13.5px; color: var(--ink-2); text-decoration: none; }
 .lp-footer-links a:hover { color: var(--ink); }
 .lp-footer-copy { font-size: 12.5px; color: var(--ink-3); }
+
+/* ── Action Board ─────────────────────────────────────────────────── */
+.tabpanel .panelhead .mini { font-family: var(--sans); background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-3); font-size: 12px; padding: 6px 13px; border-radius: 8px; cursor: pointer; transition: all 0.12s; }
+.tabpanel .panelhead .mini:hover { background: var(--accent-tint); color: var(--accent-deep); border-color: transparent; }
+
+.board { display: flex; flex-direction: column; gap: 10px; overflow-x: auto; }
+.boardrow { display: grid; grid-template-columns: 128px repeat(3, minmax(220px, 1fr)); gap: 10px; align-items: start; }
+.boardhead { position: sticky; top: 0; }
+.colhead { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); padding: 4px 2px; }
+.lane { border-top: 1px solid var(--line); padding-top: 10px; }
+.lanelabel { font-size: 13px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 7px; padding-top: 4px; }
+.lanecount { font-size: 11px; font-weight: 500; color: var(--ink-3); background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 0 7px; }
+.lanecell { display: flex; flex-direction: column; gap: 9px; min-height: 8px; }
+
+.swimcard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 13px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 7px; }
+.swimcard.approved { border-left: 3px solid var(--accent); }
+.swimcard.posted { opacity: 0.62; }
+.swimcardhead { display: flex; align-items: center; justify-content: space-between; }
+.swimkind { font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3); background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 1px 7px; }
+.swimx { background: none; border: 0; color: var(--ink-3); font-size: 17px; line-height: 1; cursor: pointer; padding: 0 2px; }
+.swimx:hover { color: var(--accent-deep); }
+.swimtitle { font-size: 13px; font-weight: 500; color: var(--ink); line-height: 1.35; }
+.swimtitle.link { color: var(--accent-deep); text-decoration: none; }
+.swimtitle.link:hover { text-decoration: underline; }
+.swimwhy { font-size: 12px; color: var(--ink-2); line-height: 1.45; }
+.swimbody { white-space: pre-wrap; word-break: break-word; font-family: var(--sans); font-size: 12.5px; line-height: 1.5; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 7px; padding: 10px; margin: 0; cursor: text; max-height: 220px; overflow-y: auto; }
+.swimnodraft { font-size: 12px; color: var(--ink-3); font-style: italic; }
+.swimedit textarea { width: 100%; font-family: var(--sans); font-size: 12.5px; line-height: 1.5; color: var(--ink); background: var(--surface); border: 1px solid var(--accent); border-radius: 7px; padding: 9px; box-sizing: border-box; outline: none; resize: vertical; }
+.swimactions { display: flex; flex-wrap: wrap; gap: 6px; }
+.swimactions button { font-family: var(--sans); background: var(--surface); border: 1px solid var(--line); color: var(--ink-2); padding: 5px 11px; border-radius: 7px; font-size: 12px; cursor: pointer; transition: all 0.12s; }
+.swimactions button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-deep); }
+.swimactions button:disabled { opacity: 0.4; cursor: default; }
+.swimactions button.prefill { background: var(--accent-tint); border-color: transparent; color: var(--accent-deep); font-weight: 500; }
+.swimactions button.adv { background: var(--accent); border-color: transparent; color: #fff; font-weight: 500; }
+.swimactions button.adv:hover { background: var(--accent-deep); color: #fff; }
+.swimactions button.ghost { color: var(--ink-3); }
+.swimhint { font-size: 10.5px; color: var(--ink-3); }
+@media (max-width: 720px) { .boardrow { grid-template-columns: 96px repeat(3, minmax(180px, 1fr)); } }

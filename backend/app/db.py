@@ -94,6 +94,94 @@ def list_runs(org_id: str, limit: int = 50) -> List[dict]:
         return []
 
 
+def latest_run(org_id: Optional[str], slug: str) -> dict:
+    """The most recent completed run for a company — used to seed the Action Board."""
+    sb = _sb()
+    if not sb or not org_id:
+        return {}
+    try:
+        r = (sb.table("runs").select("id, summary")
+             .eq("org_id", org_id).eq("company_slug", slug).eq("status", "done")
+             .order("started_at", desc=True).limit(1).execute())
+        rows = r.data or []
+        return rows[0] if rows else {}
+    except Exception:
+        return {}
+
+
+# --- action board cards ---------------------------------------------------
+def list_cards(org_id: Optional[str], slug: Optional[str] = None, limit: int = 300) -> List[dict]:
+    sb = _sb()
+    if not sb or not org_id:
+        return []
+    try:
+        q = sb.table("action_cards").select("*").eq("org_id", org_id)
+        if slug:
+            q = q.eq("company_slug", slug)
+        r = q.order("created_at", desc=True).limit(limit).execute()
+        return r.data or []
+    except Exception:
+        return []
+
+
+def create_card(org_id: Optional[str], card: dict) -> Optional[dict]:
+    sb = _sb()
+    if not sb or not org_id:
+        return None
+    try:
+        r = sb.table("action_cards").insert({**card, "org_id": org_id}).execute()
+        rows = r.data or []
+        return rows[0] if rows else None
+    except Exception:
+        return None
+
+
+def bulk_create_cards(org_id: Optional[str], cards: List[dict]) -> List[dict]:
+    sb = _sb()
+    if not sb or not org_id or not cards:
+        return []
+    try:
+        r = sb.table("action_cards").insert([{**c, "org_id": org_id} for c in cards]).execute()
+        return r.data or []
+    except Exception:
+        return []
+
+
+def update_card(org_id: Optional[str], card_id: str, patch: dict) -> Optional[dict]:
+    sb = _sb()
+    if not sb or not org_id or not card_id or not patch:
+        return None
+    try:
+        r = (sb.table("action_cards").update(patch)
+             .eq("org_id", org_id).eq("id", card_id).execute())   # scope by org_id AND id
+        rows = r.data or []
+        return rows[0] if rows else None
+    except Exception:
+        return None
+
+
+def delete_card(org_id: Optional[str], card_id: str) -> None:
+    sb = _sb()
+    if not sb or not org_id or not card_id:
+        return
+    try:
+        sb.table("action_cards").delete().eq("org_id", org_id).eq("id", card_id).execute()
+    except Exception:
+        pass
+
+
+def count_cards(org_id: Optional[str], slug: str) -> int:
+    sb = _sb()
+    if not sb or not org_id:
+        return 0
+    try:
+        r = (sb.table("action_cards").select("id", count="exact")
+             .eq("org_id", org_id).eq("company_slug", slug).execute())
+        return r.count or 0
+    except Exception:
+        return 0
+
+
 # --- monitors -------------------------------------------------------------
 def get_monitor(org_id: str, slug: str) -> dict:
     sb = _sb()

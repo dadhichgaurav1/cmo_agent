@@ -105,6 +105,27 @@ export async function runsView() {
   return r.json()
 }
 
+// --- action board ---------------------------------------------------------
+export async function listCards(url: string) {
+  const r = await fetch(`/api/cards?slug=${slugify(url)}`, { headers: await authedHeaders() })
+  return r.json()
+}
+
+export async function createCard(payload: any) {
+  const r = await fetch('/api/cards', { method: 'POST', headers: await jsonHeaders(), body: JSON.stringify(payload) })
+  return r.json()
+}
+
+export async function patchCard(id: string, patch: any) {
+  const r = await fetch(`/api/cards/${id}`, { method: 'PATCH', headers: await jsonHeaders(), body: JSON.stringify(patch) })
+  return r.json()
+}
+
+export async function deleteCard(id: string) {
+  const r = await fetch(`/api/cards/${id}`, { method: 'DELETE', headers: await authedHeaders() })
+  return r.json()
+}
+
 export async function usageView() {
   const r = await fetch('/api/usage', { headers: await authedHeaders() })
   return r.json()

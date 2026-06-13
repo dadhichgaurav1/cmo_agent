@@ -27,6 +27,7 @@ class SPAStaticFiles(StaticFiles):
         return response
 
 from app import billing
+from app import cards as cards_mod
 from app import config
 from app import db
 from app import graph as agent_graph
@@ -37,6 +38,7 @@ from app import tools as T
 from app import usage
 from app.auth import current_context
 from app.memory import memory, conversation_id_for
+from app.schemas import ActionCardCreate, ActionCardPatch
 from app.tenancy import customer_scope
 
 # Per-key short-window burst caps (key = org_id, or client IP in demo mode).
@@ -175,6 +177,51 @@ async def integrations_upsert(body: IntegrationBody, ctx: dict = Depends(current
 @app.delete("/api/integrations/{provider}")
 async def integrations_delete(provider: str, ctx: dict = Depends(current_context)):
     db.delete_integration(ctx.get("org_id"), provider)
+    return {"ok": True}
+
+
+# --- action board (cards = specific places to post) -----------------------
+@app.get("/api/cards")
+async def cards_list(slug: str | None = None, ctx: dict = Depends(current_context)):
+    """The board for a company. Lazily seeds from the latest completed run the first
+    time it's viewed, so an existing analysis fills the board without a re-run."""
+    org_id = ctx.get("org_id")
+    if org_id and slug and db.count_cards(org_id, slug) == 0:
+        run = db.latest_run(org_id, slug)
+        seeded = cards_mod.cards_from_summary(slug, run.get("id"), run.get("summary") or {})
+        if seeded:
+            db.bulk_create_cards(org_id, seeded)
+    return {"cards": db.list_cards(org_id, slug), "platforms": cards_mod.PLATFORMS}
+
+
+@app.post("/api/cards")
+async def cards_create(body: ActionCardCreate, ctx: dict = Depends(current_context)):
+    """Create a card — manual add, or pushed by the CLI build-in-public skill (source=cli)."""
+    org_id = ctx.get("org_id")
+    if not org_id:
+        raise HTTPException(status_code=400, detail="no workspace")
+    card = body.model_dump()
+    if not card.get("platform"):
+        card["platform"] = cards_mod.classify_platform(card.get("target_url"), card.get("title"))
+    created = db.create_card(org_id, card)
+    return {"card": created}
+
+
+@app.patch("/api/cards/{card_id}")
+async def cards_patch(card_id: str, body: ActionCardPatch, ctx: dict = Depends(current_context)):
+    org_id = ctx.get("org_id")
+    patch = {k: v for k, v in body.model_dump().items() if v is not None}
+    if patch.get("state") == "posted" and "posted_at" not in patch:
+        patch["posted_at"] = db._now()  # stamp when a card is marked shipped
+    updated = db.update_card(org_id, card_id, patch)
+    if not updated:
+        raise HTTPException(status_code=404, detail="card not found")
+    return {"card": updated}
+
+
+@app.delete("/api/cards/{card_id}")
+async def cards_delete(card_id: str, ctx: dict = Depends(current_context)):
+    db.delete_card(ctx.get("org_id"), card_id)
     return {"ok": True}
 
 

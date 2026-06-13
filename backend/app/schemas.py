@@ -160,3 +160,28 @@ class Capability(BaseModel):
     slug: str = ""               # tool: Composio slug
     why: str = ""
     spec: dict = Field(default_factory=dict)  # skill: prompt augmentation; tool: arg template
+
+
+# --- Action Board: stateful marketing-action cards ---
+class ActionCardCreate(BaseModel):
+    """Payload to create a card — used by manual add and the CLI build-in-public skill."""
+    company_slug: str = ""
+    source: str = "manual"       # agent | cli | manual
+    platform: str = "other"      # reddit | hackernews | x | linkedin | indiehackers | other
+    kind: str = "reply"          # post | reply
+    target_url: str = ""
+    target_title: str = ""
+    title: str = ""
+    body: str = ""
+    voice: str = ""
+    state: str = "drafted"
+    metadata: dict = Field(default_factory=dict)
+
+
+class ActionCardPatch(BaseModel):
+    """Partial update — move a card's state, edit the draft, record where it was posted."""
+    state: Optional[str] = None
+    body: Optional[str] = None
+    title: Optional[str] = None
+    position: Optional[int] = None
+    posted_url: Optional[str] = None

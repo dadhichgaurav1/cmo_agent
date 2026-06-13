@@ -55,6 +55,32 @@ export type MonitorJob = { name: string; query: string; access: string; cadence:
 
 export type ChangelogEntry = { monitor: string; summary: string; new: string[]; changed: string[]; at: string; run_id: string }
 
+export type Platform = 'reddit' | 'hackernews' | 'x' | 'linkedin' | 'indiehackers' | 'other'
+export type CardKind = 'post' | 'reply'
+export type CardState = 'suggested' | 'drafted' | 'approved' | 'posted' | 'engaged' | 'dismissed'
+
+export type ActionCard = {
+  id: string
+  org_id?: string
+  run_id?: string | null
+  company_slug?: string
+  source?: string
+  platform: Platform
+  kind: CardKind
+  target_url?: string | null
+  target_title?: string
+  title: string
+  body: string
+  voice?: string
+  state: CardState
+  posted_url?: string | null
+  posted_at?: string | null
+  position?: number
+  metadata?: any
+  // marks a card derived from the live run in-memory (no server row yet)
+  _local?: boolean
+}
+
 export type MemoryView = {
   active: boolean
   formatted_context: string

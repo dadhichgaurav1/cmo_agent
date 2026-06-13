@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { analyze, chatApi, researchApi, uiRender, memoryView, monitorsView, runMonitors, openInTab, openPrintable, escapeHtml } from './api'
+import ActionBoard from './ActionBoard'
 import type { Ev, Profile, Objective, Source, Opp, Artifact, Discarded, Capability, MonitorJob, ChangelogEntry, MemoryView } from './types'
 
 function modelColor(m?: string) {
@@ -183,6 +184,7 @@ function downloadBriefPdf(p: {
 // rendered muted and to the right of a divider. ids are unchanged (tab routing).
 const TABS = [
   { id: 'brief', label: 'Brief', tier: 'primary' },
+  { id: 'actions', label: 'Action Board', tier: 'primary' },
   { id: 'reasoning', label: 'Reasoning', tier: 'primary' },
   { id: 'monitors', label: 'Monitors', tier: 'primary' },
   { id: 'synap', label: 'Memory', tier: 'secondary' },
@@ -291,6 +293,7 @@ export default function App() {
       {started && tab === 'brief' && (
         <BriefTab {...{ objective, profile, companyType, sources, radar, strategic, artifacts, ledger, trace, running, openTrace, url }} />
       )}
+      {started && tab === 'actions' && <ActionBoard url={url} radar={radar} artifacts={artifacts} />}
       {tab === 'synap' && <SynapTab url={url} />}
       {tab === 'monitors' && <MonitorsTab url={url} jobs={monitorJobs} />}
       {tab === 'reasoning' && <ReasoningTab ledger={ledger} />}
