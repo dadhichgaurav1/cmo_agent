@@ -152,6 +152,25 @@ export async function setFeeder(url: string, enabled: boolean) {
   return r.json()
 }
 
+// --- momentum (founder activation score) ----------------------------------
+export async function getMomentum(url: string) {
+  const r = await fetch(`/api/momentum?slug=${slugify(url)}`, { headers: await authedHeaders() })
+  return r.json()
+}
+
+export async function getMomentumEvents(url: string, since?: string) {
+  const q = since ? `&since=${encodeURIComponent(since)}` : ''
+  const r = await fetch(`/api/momentum/events?slug=${slugify(url)}${q}`, { headers: await authedHeaders() })
+  return r.json()
+}
+
+export async function setOrgTimezone(timezone: string) {
+  const r = await fetch('/api/org/timezone', {
+    method: 'POST', headers: await jsonHeaders(), body: JSON.stringify({ timezone }),
+  })
+  return r.json()
+}
+
 // CLI personal access token for the build-in-public skill. Raw token returned once.
 export async function createCliToken(label: string) {
   const r = await fetch('/api/cli-tokens', { method: 'POST', headers: await jsonHeaders(), body: JSON.stringify({ label }) })

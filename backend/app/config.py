@@ -60,6 +60,11 @@ RESEND_FROM = _get("RESEND_FROM") or "StratCMO <noreply@stratcmo.app>"
 # NOTE: the Action Board daily feeder is controlled per-company (a toggle on the board,
 # stored on the monitors row), not by a global env flag — see db.all_feeders / set_card_feeder.
 
+# Momentum (founder activation score + streak + persona). On unless explicitly disabled, so the
+# pre-launch team can use it; set MOMENTUM_ENABLED=0 to ship dark. When off, awards no-op and the
+# frontend hides the chip/tab (the API returns {"momentum": null}).
+MOMENTUM_ENABLED = _get("MOMENTUM_ENABLED") != "0"
+
 
 def has(value: str) -> bool:
     return bool(value and value.strip())

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { analyze, chatApi, researchApi, uiRender, landingSpec, landingPrompt, memoryView, monitorsView, runMonitors, openInTab, openPrintable, escapeHtml } from './api'
+import { analyze, chatApi, researchApi, uiRender, landingSpec, landingPrompt, memoryView, monitorsView, runMonitors, openInTab, openPrintable, escapeHtml, getMomentum, setOrgTimezone } from './api'
 import ActionBoard from './ActionBoard'
-import type { Ev, Profile, Objective, Source, Opp, Artifact, Discarded, Capability, MonitorJob, ChangelogEntry, MemoryView } from './types'
+import Momentum from './Momentum'
+import MomentumChip, { PERSONA_GLYPH } from './MomentumChip'
+import type { Ev, Profile, Objective, Source, Opp, Artifact, Discarded, Capability, MonitorJob, ChangelogEntry, MemoryView, Momentum as Mom, MomentumAward } from './types'
 
 function modelColor(m?: string) {
   if (!m) return '#8a8378'
@@ -185,6 +187,7 @@ function downloadBriefPdf(p: {
 const TABS = [
   { id: 'brief', label: 'Brief', tier: 'primary' },
   { id: 'actions', label: 'Action Board', tier: 'primary' },
+  { id: 'momentum', label: 'Momentum', tier: 'primary' },
   { id: 'reasoning', label: 'Reasoning', tier: 'primary' },
   { id: 'monitors', label: 'Monitors', tier: 'primary' },
   { id: 'synap', label: 'Memory', tier: 'secondary' },
@@ -207,7 +210,35 @@ export default function App() {
   const [ledger, setLedger] = useState<Discarded[]>([])
   const [caps, setCaps] = useState<Capability[]>([])
   const [monitorJobs, setMonitorJobs] = useState<MonitorJob[]>([])
+  const [momentum, setMomentum] = useState<Mom | null>(null)
+  const [toast, setToast] = useState<MomentumAward | null>(null)
+  const [levelUp, setLevelUp] = useState<MomentumAward['leveled_up'] | null>(null)
   const esRef = useRef<EventSource | null>(null)
+  const toastTimer = useRef<number | null>(null)
+
+  // Capture the founder's timezone once (streak day-bucketing depends on it), then load momentum.
+  useEffect(() => {
+    try { setOrgTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone).catch(() => {}) } catch { /* ignore */ }
+  }, [])
+  useEffect(() => {
+    getMomentum(url).then((r) => setMomentum(r.momentum ?? null)).catch(() => {})
+  }, [url])
+
+  // An award came back from a card PATCH — refresh the chip, toast it, and catch level-ups.
+  function onMomentum(a: MomentumAward) {
+    setMomentum((prev) => prev ? {
+      ...prev,
+      total_points: a.total_points,
+      current_streak: a.current_streak,
+      persona_key: a.persona_key,
+      shipped_today: a.streak_safe || prev.shipped_today,
+    } : prev)
+    getMomentum(url).then((r) => setMomentum(r.momentum ?? null)).catch(() => {})
+    setToast(a)
+    if (toastTimer.current) window.clearTimeout(toastTimer.current)
+    toastTimer.current = window.setTimeout(() => setToast(null), 5000)
+    if (a.leveled_up) setLevelUp(a.leveled_up)
+  }
 
   function run() {
     if (running || !url.trim()) return
@@ -249,6 +280,7 @@ export default function App() {
           <div className="wordmark"><span className="mark">◆</span> StratCMO</div>
           <div className="sub">market intelligence that acts like a cofounder, not a tracker</div>
         </div>
+        {started && momentum && <MomentumChip m={momentum} onClick={() => setTab('momentum')} />}
         <div className="controls">
           <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="company url e.g. resend.com" onKeyDown={(e) => e.key === 'Enter' && run()} />
           <div className="toggle">
@@ -293,13 +325,46 @@ export default function App() {
       {started && tab === 'brief' && (
         <BriefTab {...{ objective, profile, companyType, sources, radar, strategic, artifacts, ledger, trace, running, openTrace, url }} />
       )}
-      {started && tab === 'actions' && <ActionBoard url={url} radar={radar} artifacts={artifacts} />}
+      {started && tab === 'actions' && <ActionBoard url={url} radar={radar} artifacts={artifacts} onMomentum={onMomentum} />}
+      {started && tab === 'momentum' && <Momentum url={url} m={momentum} />}
       {tab === 'synap' && <SynapTab url={url} />}
       {tab === 'monitors' && <MonitorsTab url={url} jobs={monitorJobs} />}
       {tab === 'reasoning' && <ReasoningTab ledger={ledger} />}
       {tab === 'capabilities' && <CapabilitiesTab caps={caps} trace={trace} />}
+
+      {toast && (
+        <div className="toast" onClick={() => setToast(null)}>
+          <div className="toast-head">✦ {toast.awarded > 0 ? `+${toast.awarded}` : ''} {toastTitle(toast)}</div>
+          <div className="toast-breakdown">{toast.breakdown.join(' · ')}</div>
+          {toast.streak_safe && <div className="toast-streak">🔥 streak safe for today — {toast.current_streak} days</div>}
+        </div>
+      )}
+
+      {levelUp && (
+        <div className="levelup-overlay" onClick={() => setLevelUp(null)}>
+          <div className="levelup-card" onClick={(e) => e.stopPropagation()}>
+            <div className="levelup-glyph">{PERSONA_GLYPH[levelUp.to] || '◆'}</div>
+            <div className="levelup-kicker">New level</div>
+            <h2>{levelUp.title}</h2>
+            <p>{levelUp.blurb}</p>
+            <button className="run" onClick={() => setLevelUp(null)}>Keep going</button>
+          </div>
+        </div>
+      )}
     </div>
   )
+}
+
+function toastTitle(a: MomentumAward): string {
+  if (a.kind === 'card_posted') {
+    if (a.breakdown.some((b) => b.includes('first time'))) return 'Shipped — first time on a new platform. That took guts.'
+    return 'Shipped. You hit send.'
+  }
+  if (a.kind === 'card_engaged') return 'Someone engaged — that’s real traction.'
+  if (a.kind === 'card_approved') return 'Draft approved.'
+  if (a.kind === 'card_reviewed') return 'Draft sharpened.'
+  if (a.kind === 'lesson_read') return 'Edge read.'
+  return 'Nice move.'
 }
 
 function ObjectiveBanner({ objective, profile }: { objective: Objective; profile: Profile | null }) {

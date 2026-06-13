@@ -81,6 +81,44 @@ export type ActionCard = {
   _local?: boolean
 }
 
+export type Momentum = {
+  total_points: number
+  current_streak: number
+  longest_streak: number
+  freezes_left: number
+  ships_total: number
+  ships_this_week: number
+  platforms_shipped: string[]
+  persona_key: string
+  persona_title: string
+  persona_blurb: string
+  next_persona_at: number | null
+  next_persona_title: string | null
+  shipped_today: boolean
+}
+
+export type MomentumAward = {
+  awarded: number
+  kind: string
+  breakdown: string[]
+  total_points: number
+  current_streak: number
+  streak_safe: boolean
+  persona_key: string
+  leveled_up?: { from: string; to: string; title: string; blurb: string }
+}
+
+export type MomentumEvent = {
+  id: string
+  kind: string
+  platform?: string
+  points: number
+  multiplier: number
+  day_key: string
+  metadata?: any
+  created_at: string
+}
+
 export type MemoryView = {
   active: boolean
   formatted_context: string

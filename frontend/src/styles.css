@@ -505,3 +505,53 @@ body {
 .feedertoggle.on { background: var(--accent-tint); border-color: transparent; color: var(--accent-deep); font-weight: 500; }
 .feederdot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); }
 .feedertoggle.on .feederdot { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
+
+/* --- Momentum: header chip --- */
+.momentumchip { display: inline-flex; align-items: center; gap: 7px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 13px; cursor: pointer; font-family: var(--sans); font-size: 13px; color: var(--ink-2); box-shadow: var(--shadow); transition: border-color 0.15s; position: relative; }
+.momentumchip:hover { border-color: var(--accent); }
+.mc-flame { filter: grayscale(1); opacity: 0.45; }
+.mc-flame.lit { filter: none; opacity: 1; }
+.mc-streak { font-weight: 700; color: var(--ink); }
+.mc-sep { color: var(--ink-3); }
+.mc-pts { font-weight: 600; }
+.mc-persona { font-weight: 600; color: var(--accent-deep); }
+.mc-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); position: absolute; top: 4px; right: 5px; box-shadow: 0 0 0 3px var(--surface); }
+
+/* --- Momentum: page --- */
+.momentum { gap: 22px; }
+.persona-card { display: flex; gap: 20px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: var(--radius); padding: 22px 26px; box-shadow: var(--shadow); }
+.persona-glyph { font-size: 44px; line-height: 1; flex-shrink: 0; }
+.persona-body { flex: 1; }
+.persona-body h2 { font-size: 20px; font-weight: 700; }
+.persona-blurb { color: var(--ink-2); font-size: 14px; margin: 4px 0 12px; }
+.persona-bar { height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; max-width: 360px; }
+.persona-bar span { display: block; height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.4s; }
+.stat-row { display: flex; gap: 14px; flex-wrap: wrap; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px 20px; min-width: 96px; box-shadow: var(--shadow); }
+.stat-n { font-size: 26px; font-weight: 700; color: var(--ink); }
+.stat-label { font-size: 12px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+.stat-hint { font-size: 11px; margin-top: 3px; }
+.platforms { font-size: 13px; }
+.momentum-h3 { font-size: 15px; font-weight: 600; margin-top: 6px; }
+.empty-momentum { background: var(--accent-tint); border-radius: var(--radius); padding: 22px 26px; }
+.empty-momentum p { color: var(--ink-2); font-size: 14px; line-height: 1.6; }
+.momentum-feed { display: flex; flex-direction: column; gap: 2px; }
+.momentum-feed li { display: flex; align-items: center; gap: 12px; padding: 9px 4px; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+.feed-pts { font-weight: 700; color: var(--accent-deep); min-width: 42px; }
+.feed-kind { color: var(--ink); }
+.feed-day { margin-left: auto; font-size: 12px; }
+
+/* --- Momentum: post-send toast --- */
+.toast { position: fixed; bottom: 26px; right: 26px; z-index: 60; background: var(--ink); color: #fff; border-radius: var(--radius); padding: 16px 20px; box-shadow: 0 8px 30px rgba(33,31,28,0.28); max-width: 340px; cursor: pointer; animation: toastin 0.25s ease-out; }
+.toast-head { font-weight: 700; font-size: 15px; }
+.toast-breakdown { font-size: 12.5px; opacity: 0.78; margin-top: 6px; }
+.toast-streak { font-size: 12.5px; margin-top: 8px; color: #ffd9b0; }
+@keyframes toastin { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* --- Momentum: level-up overlay --- */
+.levelup-overlay { position: fixed; inset: 0; z-index: 70; background: rgba(33,31,28,0.55); display: flex; align-items: center; justify-content: center; animation: toastin 0.2s ease-out; }
+.levelup-card { background: var(--surface); border-radius: var(--radius); padding: 40px 48px; text-align: center; max-width: 420px; box-shadow: 0 20px 60px rgba(33,31,28,0.35); }
+.levelup-glyph { font-size: 64px; line-height: 1; }
+.levelup-kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-top: 14px; }
+.levelup-card h2 { font-size: 26px; font-weight: 700; margin: 6px 0 10px; }
+.levelup-card p { color: var(--ink-2); font-size: 15px; line-height: 1.6; margin-bottom: 22px; }

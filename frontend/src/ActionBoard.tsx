@@ -136,8 +136,9 @@ function CardView({ card, onChange, onDismiss }: {
   )
 }
 
-export default function ActionBoard({ url, radar, artifacts }: {
+export default function ActionBoard({ url, radar, artifacts, onMomentum }: {
   url: string; radar: Opp[]; artifacts: Record<string, Artifact>
+  onMomentum?: (award: any) => void
 }) {
   const [cards, setCards] = useState<ActionCard[]>([])
   const [busy, setBusy] = useState(false)
@@ -186,7 +187,11 @@ export default function ActionBoard({ url, radar, artifacts }: {
   }
   function onChange(card: ActionCard, patch: Partial<ActionCard>) {
     applyLocal(card.id, patch)
-    if (!card._local) patchCard(card.id, patch).catch(() => {})  // persist server-backed cards
+    if (!card._local) {
+      patchCard(card.id, patch)
+        .then((r) => { if (r?.momentum && onMomentum) onMomentum(r.momentum) })  // toast the award
+        .catch(() => {})
+    }
   }
   function onDismiss(card: ActionCard) {
     setCards((cs) => cs.filter((c) => c.id !== card.id))

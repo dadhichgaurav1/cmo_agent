@@ -182,6 +182,101 @@ def count_cards(org_id: Optional[str], slug: str) -> int:
         return 0
 
 
+def get_card(org_id: Optional[str], card_id: str) -> dict:
+    """One card, org-scoped — used to read the pre-PATCH state for momentum scoring."""
+    sb = _sb()
+    if not sb or not org_id or not card_id:
+        return {}
+    try:
+        r = (sb.table("action_cards").select("*")
+             .eq("org_id", org_id).eq("id", card_id).limit(1).execute())
+        rows = r.data or []
+        return rows[0] if rows else {}
+    except Exception:
+        return {}
+
+
+# --- momentum (founder activation score) ----------------------------------
+def record_event(org_id: Optional[str], event: dict) -> Optional[dict]:
+    sb = _sb()
+    if not sb or not org_id:
+        return None
+    try:
+        r = sb.table("momentum_events").insert({**event, "org_id": org_id}).execute()
+        rows = r.data or []
+        return rows[0] if rows else None
+    except Exception:
+        return None
+
+
+def get_momentum(org_id: Optional[str], slug: str) -> dict:
+    """The cached rollup for a company. {} when none exists yet (caller fills defaults)."""
+    sb = _sb()
+    if not sb or not org_id:
+        return {}
+    try:
+        r = (sb.table("momentum_state").select("*")
+             .eq("org_id", org_id).eq("company_slug", slug or "").limit(1).execute())
+        rows = r.data or []
+        return rows[0] if rows else {}
+    except Exception:
+        return {}
+
+
+def upsert_momentum_state(org_id: Optional[str], slug: str, fields: dict) -> Optional[dict]:
+    sb = _sb()
+    if not sb or not org_id:
+        return None
+    try:
+        r = sb.table("momentum_state").upsert(
+            {**fields, "org_id": org_id, "company_slug": slug or "", "updated_at": _now()},
+            on_conflict="org_id,company_slug",
+        ).execute()
+        rows = r.data or []
+        return rows[0] if rows else None
+    except Exception:
+        return None
+
+
+def list_events(org_id: Optional[str], slug: Optional[str], since: Optional[str] = None,
+                limit: int = 200) -> List[dict]:
+    sb = _sb()
+    if not sb or not org_id:
+        return []
+    try:
+        q = sb.table("momentum_events").select("*").eq("org_id", org_id)
+        if slug:
+            q = q.eq("company_slug", slug)
+        if since:
+            q = q.gte("day_key", since)
+        r = q.order("created_at", desc=True).limit(limit).execute()
+        return r.data or []
+    except Exception:
+        return []
+
+
+def org_timezone(org_id: Optional[str]) -> str:
+    sb = _sb()
+    if not sb or not org_id:
+        return "UTC"
+    try:
+        r = sb.table("organizations").select("timezone").eq("id", org_id).limit(1).execute()
+        rows = r.data or []
+        return (rows[0].get("timezone") if rows else None) or "UTC"
+    except Exception:
+        return "UTC"
+
+
+def set_org_timezone(org_id: Optional[str], tz: str) -> None:
+    sb = _sb()
+    if not sb or not org_id or not tz:
+        return
+    try:
+        sb.table("organizations").update({"timezone": tz}).eq("id", org_id).execute()
+    except Exception:
+        pass
+
+
 # --- CLI personal access tokens (long-lived, hashed) ----------------------
 def create_cli_token(org_id: str, user_id: Optional[str], token_hash: str,
                      prefix: str, label: str) -> Optional[dict]:

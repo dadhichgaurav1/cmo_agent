@@ -33,6 +33,7 @@ from app import db
 from app import graph as agent_graph
 from app import landing as landing_mod
 from app import models as M
+from app import momentum
 from app import monitors
 from app import prompts
 from app import ratelimit
@@ -252,9 +253,14 @@ async def cards_patch(card_id: str, body: ActionCardPatch, ctx: dict = Depends(c
     patch = {k: v for k, v in body.model_dump().items() if v is not None}
     if patch.get("state") == "posted" and "posted_at" not in patch:
         patch["posted_at"] = db._now()  # stamp when a card is marked shipped
+    prev = db.get_card(org_id, card_id)            # pre-PATCH state, for momentum scoring
     updated = db.update_card(org_id, card_id, patch)
     if not updated:
         raise HTTPException(status_code=404, detail="card not found")
+    # Momentum: award points on a real forward transition (idempotent; never breaks the PATCH).
+    kind = momentum.classify_transition(prev, patch)
+    award = momentum.award(org_id, ctx.get("user_id"), updated, kind,
+                           db.org_timezone(org_id)) if kind else None
     # Loop-back (P4): the founder shipping/engaging IS the success signal. Record it to Synap so
     # the next generate_cards batch leans toward the kind of thread that actually got acted on.
     if patch.get("state") in ("posted", "engaged"):
@@ -268,12 +274,38 @@ async def cards_patch(card_id: str, body: ActionCardPatch, ctx: dict = Depends(c
             await memory.bootstrap(scope, [{"text": fact, "kind": "engagement"}])
         except Exception:
             pass
-    return {"card": updated}
+    resp = {"card": updated}
+    if award:
+        resp["momentum"] = award
+    return resp
 
 
 @app.delete("/api/cards/{card_id}")
 async def cards_delete(card_id: str, ctx: dict = Depends(current_context)):
     db.delete_card(ctx.get("org_id"), card_id)
+    return {"ok": True}
+
+
+# --- momentum (founder activation score) ----------------------------------
+@app.get("/api/momentum")
+async def momentum_view(slug: str | None = None, ctx: dict = Depends(current_context)):
+    org_id = ctx.get("org_id")
+    return {"momentum": momentum.snapshot(org_id, slug, db.org_timezone(org_id))}
+
+
+@app.get("/api/momentum/events")
+async def momentum_events_view(slug: str | None = None, since: str | None = None,
+                               ctx: dict = Depends(current_context)):
+    return {"events": db.list_events(ctx.get("org_id"), slug, since)}
+
+
+class TimezoneBody(BaseModel):
+    timezone: str = "UTC"
+
+
+@app.post("/api/org/timezone")
+async def set_timezone(body: TimezoneBody, ctx: dict = Depends(current_context)):
+    db.set_org_timezone(ctx.get("org_id"), body.timezone)
     return {"ok": True}
 
 
