@@ -35,3 +35,44 @@ services:
         sync: false
       - key: SUPABASE_JWT_SECRET
         sync: false
+      # Provision a Render Key Value (Redis) instance or Upstash, then set REDIS_URL on BOTH
+      # this web service and the worker below. Leave unset to use the in-process scheduler.
+      - key: REDIS_URL
+        sync: false
+
+  # Background worker: runs scheduled monitors off the web process (see backend/app/worker.py).
+  # Only does anything once REDIS_URL is set; deploy it alongside a Redis/Key-Value instance.
+  - type: worker
+    name: cmo-worker
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: starter
+    dockerCommand: arq app.worker.WorkerSettings
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: EXA_API_KEY
+        sync: false
+      - key: COMPOSIO_API_KEY
+        sync: false
+      - key: SYNAP_API_KEY
+        sync: false
+      - key: PIONEER_API_KEY
+        sync: false
+      - key: PIONEER_BASE_URL
+        value: https://api.pioneer.ai
+      - key: BROWSERBASE_API_KEY
+        sync: false
+      - key: BROWSERBASE_PROJECT_ID
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: REDIS_URL
+        sync: false

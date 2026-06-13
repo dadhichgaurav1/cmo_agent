@@ -22,7 +22,12 @@ role, REST), Stripe for billing, Render for deploy (single Docker container toda
 
 ---
 
-## Phase 1 — Auth + orgs + tenant-scoping retrofit (backend)  🟡 MOSTLY DONE
+## Phase 1 — Auth + orgs + tenant-scoping retrofit  ✅ DONE (org switcher + CORS lock deferred)
+
+Frontend auth shipped: `frontend/src/supabase.ts` (client gated on `VITE_SUPABASE_*`),
+`Auth.tsx` (AuthGate + email/password Login + SignOut), `api.ts` attaches the bearer token to
+every call and `?access_token=` to the SSE stream, `main.tsx` wraps the app. Builds clean.
+Still open: org-switcher UI and CORS lockdown (tracked in Phase 5 / below).
 
 ### Done
 - [x] `config.py` reads `SUPABASE_*` (accepts dashboard alias names)
@@ -58,7 +63,18 @@ role, REST), Stripe for billing, Render for deploy (single Docker container toda
 
 ---
 
-## Phase 2 — Background worker (move monitors off the web process)  ⬜ NOT STARTED
+## Phase 2 — Background worker (move monitors off the web process)  ✅ DONE (monitors); analyze-run offload deferred
+
+Shipped: `app/worker.py` (Arq) with `run_monitor_task` + a `sweep_monitors` cron (every 15 min)
+that enqueues due monitors using Redis last-fire stamps. Gated on `REDIS_URL`: when set, the
+in-process APScheduler is disabled (`monitors.redis_enabled()`) so the worker owns scheduling and
+nothing double-fires; when unset, the in-process scheduler still runs (local/demo). `render.yaml`
+gains a `cmo-worker` service (`arq app.worker.WorkerSettings`) + `REDIS_URL` on web + worker.
+Chosen Arq over Celery (async-native, lighter). Provision Render Key Value / Upstash + set
+`REDIS_URL` to activate.
+
+Still deferred (the original "research" items):
+- Offload long `/api/analyze` runs to the worker with a Redis pub/sub → SSE bridge.
 
 The in-process APScheduler won't survive restarts and double-fires on >1 instance. Monitor state
 is already DB-backed (`monitors`/`monitor_events`), so the store is migration-ready.

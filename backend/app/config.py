@@ -36,6 +36,11 @@ SUPABASE_SERVICE_ROLE_KEY = (_get("SUPABASE_SERVICE_ROLE_KEY") or _get("SUPABASE
 # via JWKS from SUPABASE_URL instead — auth.py handles both.
 SUPABASE_JWT_SECRET = _get("SUPABASE_JWT_SECRET") or _get("SUPABASE_LEGACY_JWT_SECRET")
 
+# Redis / Arq background worker. When set, scheduled monitors run in a dedicated worker process
+# (app/worker.py) and the in-process APScheduler is disabled. When unset, the in-process
+# scheduler is used (single-instance; fine for local/demo).
+REDIS_URL = _get("REDIS_URL")
+
 
 def has(value: str) -> bool:
     return bool(value and value.strip())

@@ -18,7 +18,7 @@ import os
 from datetime import datetime, timezone
 from typing import Awaitable, Callable, List, Optional
 
-from app import db
+from app import config, db
 from app.tenancy import customer_scope
 
 _STORE = os.getenv("MONITORS_PATH", "/tmp/cmo_monitors.json")
@@ -109,9 +109,19 @@ def set_runner(fn: Callable[[Optional[str], str, dict], Awaitable[dict]]) -> Non
     _runner = fn
 
 
+def redis_enabled() -> bool:
+    return bool(config.REDIS_URL)
+
+
 def start_scheduler() -> bool:
-    """Start the in-process scheduler and register every stored monitor. Best-effort."""
+    """Start the in-process scheduler and register every stored monitor. Best-effort.
+
+    No-op when Redis is configured — the dedicated Arq worker (app/worker.py) owns scheduled
+    execution then, so running APScheduler here too would double-fire.
+    """
     global _scheduler
+    if redis_enabled():
+        return False
     if _scheduler is not None:
         return True
     try:

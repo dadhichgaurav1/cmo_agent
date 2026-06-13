@@ -12,3 +12,4 @@ composio
 apscheduler>=3.10,<4
 supabase>=2.9,<3
 pyjwt>=2.9,<3
+arq>=0.26,<0.27
