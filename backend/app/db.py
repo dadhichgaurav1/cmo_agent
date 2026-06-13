@@ -172,6 +172,28 @@ def get_org(org_id: Optional[str]) -> dict:
         return {}
 
 
+def update_org(org_id: Optional[str], fields: Dict[str, Any]) -> None:
+    sb = _sb()
+    if not sb or not org_id or not fields:
+        return
+    try:
+        sb.table("organizations").update(fields).eq("id", org_id).execute()
+    except Exception:
+        pass
+
+
+def org_id_for_customer(customer_id: Optional[str]) -> Optional[str]:
+    sb = _sb()
+    if not sb or not customer_id:
+        return None
+    try:
+        r = sb.table("organizations").select("id").eq("stripe_customer_id", customer_id).limit(1).execute()
+        rows = r.data or []
+        return rows[0]["id"] if rows else None
+    except Exception:
+        return None
+
+
 def get_org_settings(org_id: Optional[str]) -> dict:
     sb = _sb()
     if not sb or not org_id:

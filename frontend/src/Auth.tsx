@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase, authEnabled } from './supabase'
+import { usageView, startCheckout, openBillingPortal } from './api'
 
 /**
  * Wraps the app in a Supabase auth gate. In demo mode (no VITE_SUPABASE_* configured) it renders
@@ -27,8 +28,38 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   return (
     <>
       {children}
-      <SignOut email={session.user.email} />
+      <AccountBar email={session.user.email} />
     </>
+  )
+}
+
+function AccountBar({ email }: { email?: string }) {
+  const [plan, setPlan] = useState<string>('')
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    usageView().then((u) => setPlan(u?.plan || '')).catch(() => {})
+  }, [])
+
+  async function upgrade() {
+    if (busy) return
+    setBusy(true)
+    try {
+      const r = plan === 'pro' ? await openBillingPortal() : await startCheckout()
+      if (r?.detail && !r?.url) alert(typeof r.detail === 'string' ? r.detail : 'Billing unavailable')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div style={S.bar}>
+      {plan && <span style={S.plan}>{plan === 'pro' ? '★ Pro' : 'Free plan'}</span>}
+      <button style={S.barbtn} disabled={busy} onClick={upgrade}>
+        {plan === 'pro' ? 'Manage billing' : 'Upgrade'}
+      </button>
+      <button title={email} style={S.barbtn} onClick={() => supabase?.auth.signOut()}>Sign out</button>
+    </div>
   )
 }
 
@@ -114,9 +145,14 @@ const S: Record<string, React.CSSProperties> = {
   err: { fontSize: 12.5, color: '#b3402a', background: '#c2603f14', padding: '8px 10px', borderRadius: 8 },
   msg: { fontSize: 12.5, color: '#3e7c74', background: '#3e7c7414', padding: '8px 10px', borderRadius: 8 },
   switch: { fontSize: 12.5, color: '#c2603f', cursor: 'pointer', textAlign: 'center', marginTop: 4 },
-  signout: {
-    position: 'fixed', bottom: 14, right: 14, zIndex: 50, padding: '6px 12px',
-    fontSize: 12, color: '#8b857a', background: '#fff', border: '1px solid #e7e2d8',
-    borderRadius: 8, cursor: 'pointer',
+  bar: {
+    position: 'fixed', bottom: 14, right: 14, zIndex: 50, display: 'flex', alignItems: 'center',
+    gap: 8, padding: '6px 8px', background: '#fff', border: '1px solid #e7e2d8',
+    borderRadius: 10, boxShadow: '0 1px 8px rgba(0,0,0,.04)',
+  },
+  plan: { fontSize: 11.5, color: '#8b857a', padding: '0 4px' },
+  barbtn: {
+    fontSize: 12, color: '#211f1c', background: '#faf9f5', border: '1px solid #e7e2d8',
+    borderRadius: 8, padding: '5px 10px', cursor: 'pointer',
   },
 }

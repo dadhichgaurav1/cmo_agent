@@ -8,6 +8,8 @@ from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from app import billing
+from app import config
 from app import db
 from app import graph as agent_graph
 from app import models as M
@@ -106,6 +108,47 @@ async def usage_view(ctx: dict = Depends(current_context)):
     """Current-month usage vs plan limits, for the caller's workspace."""
     org_id = ctx.get("org_id")
     return {"plan": usage.plan_for(org_id) if org_id else "demo", "quotas": usage.all_quotas(org_id)}
+
+
+# --- Stripe billing -------------------------------------------------------
+@app.post("/api/billing/checkout")
+async def billing_checkout(ctx: dict = Depends(current_context)):
+    if not billing.enabled():
+        raise HTTPException(status_code=503, detail="billing not configured")
+    org_id = ctx.get("org_id")
+    if not org_id:
+        raise HTTPException(status_code=400, detail="no workspace")
+    url = billing.create_checkout(
+        org_id, ctx.get("email"),
+        f"{config.APP_BASE_URL}/?billing=success", f"{config.APP_BASE_URL}/?billing=cancel",
+    )
+    if not url:
+        raise HTTPException(status_code=500, detail="could not start checkout (price configured?)")
+    return {"url": url}
+
+
+@app.post("/api/billing/portal")
+async def billing_portal(ctx: dict = Depends(current_context)):
+    if not billing.enabled():
+        raise HTTPException(status_code=503, detail="billing not configured")
+    org_id = ctx.get("org_id")
+    if not org_id:
+        raise HTTPException(status_code=400, detail="no workspace")
+    url = billing.create_portal(org_id, f"{config.APP_BASE_URL}/?billing=portal")
+    if not url:
+        raise HTTPException(status_code=400, detail="no billing account yet — subscribe first")
+    return {"url": url}
+
+
+@app.post("/api/billing/webhook")
+async def billing_webhook(request: Request):
+    """Stripe webhook — signature-verified, source of truth for entitlement. No auth dependency."""
+    payload = await request.body()
+    sig = request.headers.get("stripe-signature", "")
+    try:
+        return billing.handle_event(payload, sig)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"webhook error: {e}")
 
 
 def _sse(ev: dict) -> str:

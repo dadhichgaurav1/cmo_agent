@@ -41,6 +41,14 @@ SUPABASE_JWT_SECRET = _get("SUPABASE_JWT_SECRET") or _get("SUPABASE_LEGACY_JWT_S
 # scheduler is used (single-instance; fine for local/demo).
 REDIS_URL = _get("REDIS_URL")
 
+# Stripe billing. When STRIPE_SECRET_KEY is unset, billing endpoints report disabled (503) and
+# orgs stay on the free plan. STRIPE_PRICE_PRO is the recurring price id for the paid plan.
+STRIPE_SECRET_KEY = _get("STRIPE_SECRET_KEY")
+STRIPE_WEBHOOK_SECRET = _get("STRIPE_WEBHOOK_SECRET")
+STRIPE_PRICE_PRO = _get("STRIPE_PRICE_PRO")
+# Public base URL of the app, for Stripe success/cancel/return redirects.
+APP_BASE_URL = _get("APP_BASE_URL") or "http://localhost:5173"
+
 
 def has(value: str) -> bool:
     return bool(value and value.strip())

@@ -124,7 +124,22 @@ run up the bill. `usage_events` already records run/chat/research/monitor events
 
 ---
 
-## Phase 4 — Stripe billing  ⬜ NOT STARTED
+## Phase 4 — Stripe billing  ✅ DONE (free/pro subscription); metered/credits deferred
+
+Shipped: `app/billing.py` (Checkout, Customer Portal, webhook handler) + routes
+`/api/billing/{checkout,portal,webhook}`. Webhooks are the source of truth — `checkout.session
+.completed`, `customer.subscription.*`, `invoice.payment_failed` write `plan`/`subscription_status`
+/`current_period_end`/`stripe_*` onto the org (verified via `STRIPE_WEBHOOK_SECRET`). Phase 3
+quotas read `plan`, so entitlement is automatic. Gated on `STRIPE_SECRET_KEY` (503 when unset).
+Frontend: `AccountBar` footer shows plan + Upgrade (Checkout) / Manage billing (Portal) + Sign out.
+
+To activate: create a Pro recurring price in Stripe → set `STRIPE_PRICE_PRO`, `STRIPE_SECRET_KEY`,
+`STRIPE_WEBHOOK_SECRET`, `APP_BASE_URL`. Test webhooks with `stripe listen --forward-to
+localhost:8080/api/billing/webhook`.
+
+Still deferred (the original "research" items):
+- Usage-based / credit pricing (Stripe meter events) — current model is flat free/pro.
+- Chosen flat subscription for v1 simplicity; revisit once real COGS per run is measured (Phase 3 deferred item).
 
 Depends on orgs + entitlement storage (Phase 1) and ideally usage tracking (Phase 3).
 `organizations` already has `stripe_customer_id`, `stripe_subscription_id`, `plan`,

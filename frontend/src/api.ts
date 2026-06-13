@@ -105,6 +105,26 @@ export async function runsView() {
   return r.json()
 }
 
+export async function usageView() {
+  const r = await fetch('/api/usage', { headers: await authedHeaders() })
+  return r.json()
+}
+
+// Redirects the browser to Stripe Checkout / Customer Portal.
+export async function startCheckout() {
+  const r = await fetch('/api/billing/checkout', { method: 'POST', headers: await authedHeaders() })
+  const j = await r.json()
+  if (j.url) window.location.href = j.url
+  return j
+}
+
+export async function openBillingPortal() {
+  const r = await fetch('/api/billing/portal', { method: 'POST', headers: await authedHeaders() })
+  const j = await r.json()
+  if (j.url) window.location.href = j.url
+  return j
+}
+
 export function escapeHtml(s: string): string {
   return (s || '').replace(/[&<>"']/g, (c) => (
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string
