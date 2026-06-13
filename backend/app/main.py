@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -12,10 +12,34 @@ from app import db
 from app import graph as agent_graph
 from app import models as M
 from app import monitors
+from app import ratelimit
 from app import tools as T
+from app import usage
 from app.auth import current_context
 from app.memory import memory, conversation_id_for
 from app.tenancy import customer_scope
+
+# Per-key short-window burst caps (key = org_id, or client IP in demo mode).
+RATE_LIMITS = {"run": (5, 60), "chat": (30, 60), "research": (20, 60), "ui": (20, 60)}
+
+
+def _enforce(ctx: dict, request: Request, kind: str) -> None:
+    """Kill-switch -> rate limit -> monthly plan quota. Raises HTTPException when blocked.
+    A no-op for demo mode on quotas (org_id is None); rate limit still applies, keyed by IP."""
+    org_id = ctx.get("org_id")
+    if org_id and usage.org_disabled(org_id):
+        raise HTTPException(status_code=403, detail="This workspace is disabled. Contact support.")
+    key = f"{kind}:{org_id or (request.client.host if request.client else 'anon')}"
+    limit, window = RATE_LIMITS.get(kind, (30, 60))
+    if not ratelimit.allow(key, limit, window):
+        raise HTTPException(status_code=429, detail="Too many requests — slow down a moment.")
+    q = usage.quota(org_id, kind)
+    if not q["allowed"]:
+        raise HTTPException(status_code=429, detail={
+            "error": "quota_exceeded", "kind": kind, "used": q["used"],
+            "limit": q["limit"], "plan": q["plan"],
+            "message": f"Monthly {kind} limit reached ({q['used']}/{q['limit']} on {q['plan']}). Upgrade to continue.",
+        })
 
 app = FastAPI(title="CMO Cofounder")
 app.add_middleware(
@@ -77,6 +101,13 @@ async def runs_view(ctx: dict = Depends(current_context)):
     return {"runs": db.list_runs(ctx.get("org_id"))}
 
 
+@app.get("/api/usage")
+async def usage_view(ctx: dict = Depends(current_context)):
+    """Current-month usage vs plan limits, for the caller's workspace."""
+    org_id = ctx.get("org_id")
+    return {"plan": usage.plan_for(org_id) if org_id else "demo", "quotas": usage.all_quotas(org_id)}
+
+
 def _sse(ev: dict) -> str:
     return f"event: {ev.get('type', 'message')}\ndata: {json.dumps(ev)}\n\n"
 
@@ -110,8 +141,10 @@ def _cached_events(url: str):
 
 
 @app.get("/api/analyze/stream")
-async def analyze_stream(url: str, mode: str = "live", ctx: dict = Depends(current_context)):
+async def analyze_stream(request: Request, url: str, mode: str = "live", ctx: dict = Depends(current_context)):
     org_id, user_id = ctx.get("org_id"), ctx.get("user_id")
+    if mode != "cached":
+        _enforce(ctx, request, "run")  # cached demo runs are free
 
     async def gen():
         if mode == "cached":
@@ -143,7 +176,8 @@ class ChatBody(BaseModel):
 
 
 @app.post("/api/chat")
-async def chat(body: ChatBody, actx: dict = Depends(current_context)):
+async def chat(body: ChatBody, request: Request, actx: dict = Depends(current_context)):
+    _enforce(actx, request, "chat")
     org_id, user_id = actx.get("org_id"), actx.get("user_id")
     slug = agent_graph.slugify(body.url)
     scope = customer_scope(org_id, slug)
@@ -165,13 +199,15 @@ class ResearchBody(BaseModel):
 
 
 @app.post("/api/research")
-async def research(body: ResearchBody):
+async def research(body: ResearchBody, request: Request, ctx: dict = Depends(current_context)):
+    _enforce(ctx, request, "research")
     findings = await T.exa_search(body.query, num=5)
     block = "\n".join(f"- {f.title} ({f.url}): {f.snippet[:160]}" for f in findings)
     system = ("You are a CMO cofounder. Turn raw research into 3 sharp, non-obvious, actionable takeaways "
               "for the founder — no filler.")
     human = f"Research question: {body.query}\nFindings:\n{block or '(none)'}\n\nReturn 3 concise takeaways."
     takeaways, name = await M.run_text("synthesize", system, human, max_tokens=600)
+    db.record_usage(ctx.get("org_id"), "research", 1, {"query": body.query[:120]})
     return {"findings": [f.model_dump() for f in findings], "takeaways": takeaways, "model": name}
 
 
@@ -231,7 +267,8 @@ class UIBody(BaseModel):
 
 
 @app.post("/api/ui/render")
-async def ui_render(body: UIBody):
+async def ui_render(body: UIBody, request: Request, ctx: dict = Depends(current_context)):
+    _enforce(ctx, request, "ui")
     html, via = await _generate_ui(_ui_prompt(body))
     return {"html": html, "via": via}
 

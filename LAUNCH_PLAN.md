@@ -94,7 +94,20 @@ is already DB-backed (`monitors`/`monitor_events`), so the store is migration-re
 
 ---
 
-## Phase 3 — Rate limits + cost caps  ⬜ NOT STARTED
+## Phase 3 — Rate limits + cost caps  ✅ DONE (Redis-backed rate limit + token-cost capture deferred)
+
+Shipped: `app/usage.py` (per-plan monthly quotas via `PLAN_LIMITS`; free=10 runs/200 chats/etc,
+pro=unlimited; kill-switch via `org_settings.settings.disabled`), `app/ratelimit.py` (in-memory
+fixed-window burst caps), and a shared `_enforce(ctx, request, kind)` in main.py applied to
+run/chat/research/ui — kill-switch → rate limit → monthly quota, returning 403/429 with an
+upgrade message. Demo mode (no org) skips quotas. Closed a security gap: `/api/research` and
+`/api/ui/render` now require auth. New `GET /api/usage` surfaces current usage vs limits.
+
+Still deferred (the original "research" items):
+- Redis-backed distributed rate limiting (in-memory is per-instance only).
+- Capturing real per-run token spend into `usage_events.metadata` (needs threading model usage
+  out of `models.py`).
+- Frontend: show usage + upgrade prompt on 429.
 
 We proxy paid APIs (Anthropic, Browserbase, Exa, Composio) per user. Without caps, one user can
 run up the bill. `usage_events` already records run/chat/research/monitor events.

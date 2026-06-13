@@ -157,6 +157,45 @@ def get_monitor_events(org_id: str, slug: str, limit: int = 50) -> List[dict]:
         return []
 
 
+# --- org lookups (plan / settings) ----------------------------------------
+def get_org(org_id: Optional[str]) -> dict:
+    sb = _sb()
+    if not sb or not org_id:
+        return {}
+    try:
+        r = (sb.table("organizations")
+             .select("plan, subscription_status, stripe_customer_id")
+             .eq("id", org_id).limit(1).execute())
+        rows = r.data or []
+        return rows[0] if rows else {}
+    except Exception:
+        return {}
+
+
+def get_org_settings(org_id: Optional[str]) -> dict:
+    sb = _sb()
+    if not sb or not org_id:
+        return {}
+    try:
+        r = sb.table("org_settings").select("settings").eq("org_id", org_id).limit(1).execute()
+        rows = r.data or []
+        return (rows[0].get("settings") or {}) if rows else {}
+    except Exception:
+        return {}
+
+
+def usage_count(org_id: Optional[str], kind: str, since_iso: str) -> int:
+    sb = _sb()
+    if not sb or not org_id:
+        return 0
+    try:
+        r = (sb.table("usage_events").select("id", count="exact")
+             .eq("org_id", org_id).eq("kind", kind).gte("created_at", since_iso).execute())
+        return r.count or 0
+    except Exception:
+        return 0
+
+
 # --- usage metering (billing + cost caps) ---------------------------------
 def record_usage(org_id: Optional[str], kind: str, quantity: float = 1,
                  metadata: Optional[Dict[str, Any]] = None) -> None:
