@@ -349,7 +349,11 @@ function SynapTab({ url }: { url: string }) {
       )}
 
       {mem && !mem.facts.length && !busy && (
-        <div className="muted empty-inline">No memory yet for this company. Run the agent once, then come back, the brain fills in.</div>
+        <div className="muted empty-inline">
+          {mem.processing
+            ? `Indexing ${mem.processing} ${mem.processing === 1 ? 'memory' : 'memories'} in Synap. Writes are queued; facts surface once Synap finishes processing. Hit refresh shortly.`
+            : 'No memory yet for this company. Run the agent once, then come back, the brain fills in.'}
+        </div>
       )}
     </div>
   )

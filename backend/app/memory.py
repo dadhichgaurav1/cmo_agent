@@ -34,6 +34,32 @@ def _save(data: dict) -> None:
         pass
 
 
+_PENDING = os.getenv("PENDING_PATH", "/tmp/cmo_pending.json")
+
+
+def _record_pending(customer_id: str, count: int) -> None:
+    """Note that a write was just queued to Synap, so the UI can show 'indexing' vs 'empty'."""
+    try:
+        try:
+            with open(_PENDING) as f:
+                d = json.load(f)
+        except Exception:
+            d = {}
+        d[customer_id] = {"count": int(count), "at": datetime.now(timezone.utc).isoformat()}
+        with open(_PENDING, "w") as f:
+            json.dump(d, f)
+    except Exception:
+        pass
+
+
+def _read_pending(customer_id: str):
+    try:
+        with open(_PENDING) as f:
+            return json.load(f).get(customer_id)
+    except Exception:
+        return None
+
+
 def conversation_id_for(key: str) -> str:
     """Stable UUID per company so chat turns share one conversation."""
     return str(uuid.uuid5(uuid.NAMESPACE_URL, "cmo-cofounder/" + key))
@@ -92,12 +118,21 @@ class Memory:
                             out.append({"text": str(it)})
                     return out
 
+                facts = _listify("facts")
+                episodes = _listify("episodes")
+                temporal = _listify("temporal_events")
+                fc = getattr(ctx, "formatted_context", "") or ""
+                processing = 0
+                if not (facts or episodes or fc):
+                    pend = _read_pending(customer_id)
+                    processing = int(pend.get("count", 0)) if pend else 0
                 return {
                     "active": True,
-                    "formatted_context": getattr(ctx, "formatted_context", "") or "",
-                    "facts": _listify("facts"),
-                    "episodes": _listify("episodes"),
-                    "temporal_events": _listify("temporal_events"),
+                    "formatted_context": fc,
+                    "facts": facts,
+                    "episodes": episodes,
+                    "temporal_events": temporal,
+                    "processing": processing,
                 }
             except Exception:
                 pass
@@ -108,7 +143,7 @@ class Memory:
             for t in texts:
                 items.append({"kind": kind, "text": t})
         return {"active": False, "formatted_context": "", "facts": items,
-                "episodes": [], "temporal_events": []}
+                "episodes": [], "temporal_events": [], "processing": 0}
 
     # --- bootstrap ingest (setup-time knowledge): one batch_create ---
     async def bootstrap(self, customer_id: str, items: List[Dict[str, Any]]):
@@ -132,6 +167,7 @@ class Memory:
                     for it in items
                 ]
                 await self.sdk.memories.batch_create(documents=docs, fail_fast=False)
+                _record_pending(customer_id, len(docs))
                 return
             except Exception:
                 pass

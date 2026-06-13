@@ -61,5 +61,6 @@ export type MemoryView = {
   facts: any[]
   episodes: any[]
   temporal_events: any[]
+  processing?: number
   conversation_id?: string
 }
