@@ -56,7 +56,7 @@ function CardView({ card, onChange, onDismiss }: {
   }
 
   return (
-    <div className={'swimcard ' + bucket}>
+    <div className={'swimcard ' + bucket + (card.state === 'engaged' ? ' engaged' : '')}>
       <div className="swimcardhead">
         <span className="swimkind">{card.kind === 'post' ? 'new post' : 'reply'}</span>
         <button className="swimx" title="dismiss" onClick={onDismiss}>×</button>
@@ -87,6 +87,8 @@ function CardView({ card, onChange, onDismiss }: {
         </button>
         {bucket === 'review' && <button className="adv" onClick={() => onChange({ state: 'approved' })}>approve →</button>}
         {bucket === 'approved' && <button className="adv" onClick={() => onChange({ state: 'posted' })}>mark posted ✓</button>}
+        {card.state === 'posted' && <button className="ghost" onClick={() => onChange({ state: 'engaged' })}>got a reply ⭐</button>}
+        {card.state === 'engaged' && <span className="swimengaged">⭐ engaged</span>}
         {!card.body && !editing && <button className="ghost" onClick={() => setEditing(true)}>write</button>}
       </div>
       {!act.prefills && card.body && bucket !== 'posted' && (

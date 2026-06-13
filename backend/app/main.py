@@ -238,6 +238,19 @@ async def cards_patch(card_id: str, body: ActionCardPatch, ctx: dict = Depends(c
     updated = db.update_card(org_id, card_id, patch)
     if not updated:
         raise HTTPException(status_code=404, detail="card not found")
+    # Loop-back (P4): the founder shipping/engaging IS the success signal. Record it to Synap so
+    # the next generate_cards batch leans toward the kind of thread that actually got acted on.
+    if patch.get("state") in ("posted", "engaged"):
+        scope = customer_scope(org_id, updated.get("company_slug") or "")
+        fact = (f"[engagement] {updated.get('state')} a {updated.get('platform')} {updated.get('kind')} "
+                f"on '{updated.get('target_title') or updated.get('title')}'")
+        query = (updated.get("metadata") or {}).get("query")
+        if query:
+            fact += f" (found via query: {query})"
+        try:
+            await memory.bootstrap(scope, [{"text": fact, "kind": "engagement"}])
+        except Exception:
+            pass
     return {"card": updated}
 
 

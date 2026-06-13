@@ -26,13 +26,16 @@ GENQ_SYS = (CMO_PERSONA + " You turn a company's positioning into precise search
             "LIVE online threads where the company could engage naturally and helpfully — not threads about the company itself.")
 
 
-def genq_human(profile, objective, platform, n):
+def genq_human(profile, objective, platform, n, engaged=""):
     kws = ", ".join(profile.get("keywords", []) or [])
+    # Loop-back: bias toward the kinds of threads the founder actually posted to before.
+    engaged_block = (f"\nThe founder has already engaged with threads like these (lean toward similar ones):\n{engaged}\n"
+                     if engaged else "")
     return f"""Company: {profile.get('name')} — {profile.get('one_liner')}
 Category: {profile.get('category')} | ICP: {profile.get('icp')} | Stage: {profile.get('stage')}
 Keywords: {kws}
 Objective: {objective.get('objective')}
-
+{engaged_block}
 Generate {n} specific search queries to find RECENT {platform} threads/posts where this company could add genuine value
 and naturally belong: questions its ICP is asking, problems it solves, "how do I / what do you use for" posts, comparisons.
 NOT queries about the company itself or its brand name. Surface the conversations its buyers are having right now.

@@ -411,6 +411,8 @@ async def generate_cards(org_id, slug: str, platforms=None, per_platform: int = 
 
     scope = customer_scope(org_id, slug)
     prefs = await memory.recall_user(scope, ["founder voice", "tone", "writing style"], user_id=None)
+    # Loop-back (P4): what the founder has actually posted/engaged with biases the next batch.
+    engaged = await memory.recall(scope, ["engagement", "posted thread", "what worked"])
     humanizer = await skills.resolve_skill("humanizer", emit)
     seen = {c.get("target_url") for c in db.list_cards(org_id, slug) if c.get("target_url")}
     new_cards: list = []
@@ -420,7 +422,8 @@ async def generate_cards(org_id, slug: str, platforms=None, per_platform: int = 
         voice = await skills.resolve_skill(PLATFORM_SKILL.get(platform, "outreach"), emit)
         try:
             q, _ = await models.run_structured(
-                "plan", prompts.GENQ_SYS, prompts.genq_human(profile, objective, platform, per_platform + 1),
+                "plan", prompts.GENQ_SYS,
+                prompts.genq_human(profile, objective, platform, per_platform + 1, engaged=(engaged or "")[:600]),
                 CardQueries, temperature=0.5, max_tokens=800)
             queries = [x.query for x in q.queries if x.query][: per_platform + 1]
         except Exception:

@@ -60,3 +60,7 @@ The core launch work and its status live in [LAUNCH_PLAN.md](LAUNCH_PLAN.md).
 - [ ] **Daily card feeder in Redis/Arq mode** — `feed_all_cards` is wired into the in-process
   APScheduler only; the Arq worker path (when `REDIS_URL` set) doesn't feed yet. On-demand
   `POST /api/cards/generate` works in all modes. Gate: `CARD_FEEDER_ENABLED=1`.
+- [ ] **Auto-detect replies/karma on posted cards** (the "engaged" state today is set manually
+  by the founder). Real auto-detection needs per-platform read APIs (HN Algolia by item id,
+  Reddit API by permalink); deep-link posting doesn't give us the new comment id. Wire when
+  those read paths exist. The learning loop (posted/engaged -> Synap -> next batch bias) is live.
