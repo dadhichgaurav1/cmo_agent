@@ -10,7 +10,7 @@ from typing import TypedDict
 
 from langgraph.graph import START, END, StateGraph
 
-from app import capabilities, composio_tools, config, db, email, models, monitors, prompts, skills, tools
+from app import capabilities, composio_tools, db, email, models, monitors, prompts, skills, tools
 from app.memory import memory
 from app.tenancy import customer_scope
 from app.schemas import (
@@ -461,17 +461,14 @@ async def generate_cards(org_id, slug: str, platforms=None, per_platform: int = 
 
 
 async def feed_all_cards() -> int:
-    """Daily feeder entry point: generate fresh cards for every active company (one that has
-    monitors). Gated by config.CARD_FEEDER_ENABLED. Returns the number of cards created."""
-    if not config.CARD_FEEDER_ENABLED:
-        return 0
+    """Daily feeder entry point: generate fresh cards for every company that opted in via the
+    Action Board toggle (db.all_feeders). The scheduler calls this once a day. Per-company, not
+    a global switch. Returns the number of cards created."""
     total = 0
-    seen = set()
-    for m in monitors.all_monitors():
-        org_id, slug = m.get("org_id"), m.get("slug")
-        if not slug or (org_id, slug) in seen:
+    for f in db.all_feeders():
+        org_id, slug = f.get("org_id"), f.get("slug")
+        if not slug:
             continue
-        seen.add((org_id, slug))
         try:
             total += len(await generate_cards(org_id, slug))
         except Exception:

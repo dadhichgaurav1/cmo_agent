@@ -194,7 +194,24 @@ async def cards_list(slug: str | None = None, ctx: dict = Depends(current_contex
         seeded = cards_mod.cards_from_summary(slug, run.get("id"), run.get("summary") or {})
         if seeded:
             db.bulk_create_cards(org_id, seeded)
-    return {"cards": db.list_cards(org_id, slug), "platforms": cards_mod.PLATFORMS}
+    return {"cards": db.list_cards(org_id, slug), "platforms": cards_mod.PLATFORMS,
+            "feeder": db.get_card_feeder(org_id, slug) if slug else False}
+
+
+class FeederBody(BaseModel):
+    slug: str
+    enabled: bool
+
+
+@app.post("/api/cards/feeder")
+async def cards_feeder(body: FeederBody, ctx: dict = Depends(current_context)):
+    """Toggle the per-company daily feeder (the 'auto-refill' switch on the Action Board).
+    The monitor scheduler's daily sweep picks up whoever's opted in."""
+    org_id = ctx.get("org_id")
+    if not org_id:
+        raise HTTPException(status_code=400, detail="no workspace")
+    db.set_card_feeder(org_id, body.slug, body.enabled)
+    return {"enabled": body.enabled}
 
 
 @app.post("/api/cards")

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { listCards, patchCard, deleteCard, generateCards, createCliToken } from './api'
+import { listCards, patchCard, deleteCard, generateCards, createCliToken, setFeeder } from './api'
 import { PLATFORMS, cardAction, classifyPlatform } from './deeplinks'
 import type { ActionCard, CardState, Opp, Artifact } from './types'
 
@@ -144,18 +144,26 @@ export default function ActionBoard({ url, radar, artifacts }: {
   const [generating, setGenerating] = useState(false)
   const [note, setNote] = useState('')
   const [serverBacked, setServerBacked] = useState(false)
+  const [feeder, setFeederOn] = useState(false)
 
   async function load() {
     setBusy(true)
     try {
       const r = await listCards(url)
       const got: ActionCard[] = r.cards || []
+      setFeederOn(!!r.feeder)
       if (got.length) { setCards(got); setServerBacked(true) }
       else { setCards(deriveLocalCards(radar, artifacts)); setServerBacked(false) }
     } catch {
       setCards(deriveLocalCards(radar, artifacts)); setServerBacked(false)
     }
     setBusy(false)
+  }
+
+  async function toggleFeeder() {
+    const next = !feeder
+    setFeederOn(next)  // optimistic
+    try { await setFeeder(url, next) } catch { setFeederOn(!next) }
   }
 
   async function generate() {
@@ -200,6 +208,10 @@ export default function ActionBoard({ url, radar, artifacts }: {
         </div>
         <div className="panelactions">
           {note && <span className="muted boardnote">{note}</span>}
+          <button className={'feedertoggle' + (feeder ? ' on' : '')} onClick={toggleFeeder}
+            title="When on, the board auto-refills with fresh drafted cards once a day">
+            <span className="feederdot" />Auto-refill daily {feeder ? 'on' : 'off'}
+          </button>
           <button className="mini" onClick={load} disabled={busy || generating}>{busy ? 'loading…' : 'refresh'}</button>
           <button className="run" onClick={generate} disabled={generating || busy}>
             {generating ? 'finding threads…' : '✨ Generate cards'}

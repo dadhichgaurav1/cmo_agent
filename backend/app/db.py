@@ -284,6 +284,45 @@ def all_monitors() -> List[dict]:
         return []
 
 
+# --- Action Board daily feeder toggle (per company, on the monitors row) ----
+def set_card_feeder(org_id: str, slug: str, enabled: bool) -> None:
+    sb = _sb()
+    if not sb or not org_id:
+        return
+    try:
+        sb.table("monitors").upsert(
+            {"org_id": org_id, "company_slug": slug, "feed_enabled": enabled, "updated_at": _now()},
+            on_conflict="org_id,company_slug",
+        ).execute()
+    except Exception:
+        pass
+
+
+def get_card_feeder(org_id: Optional[str], slug: str) -> bool:
+    sb = _sb()
+    if not sb or not org_id:
+        return False
+    try:
+        r = (sb.table("monitors").select("feed_enabled")
+             .eq("org_id", org_id).eq("company_slug", slug).limit(1).execute())
+        rows = r.data or []
+        return bool(rows[0].get("feed_enabled")) if rows else False
+    except Exception:
+        return False
+
+
+def all_feeders() -> List[dict]:
+    """Every company that opted the daily feeder in — the sweep's work list."""
+    sb = _sb()
+    if not sb:
+        return []
+    try:
+        r = sb.table("monitors").select("org_id, company_slug").eq("feed_enabled", True).execute()
+        return [{"org_id": x.get("org_id"), "slug": x.get("company_slug")} for x in (r.data or [])]
+    except Exception:
+        return []
+
+
 def append_monitor_event(org_id: str, slug: str, entry: dict) -> None:
     sb = _sb()
     if not sb or not org_id:

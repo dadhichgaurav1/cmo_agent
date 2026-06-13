@@ -59,7 +59,9 @@ The core launch work and its status live in [LAUNCH_PLAN.md](LAUNCH_PLAN.md).
   - Trigger: when HN becomes a primary engagement channel for customers.
 - [ ] **Daily card feeder in Redis/Arq mode** — `feed_all_cards` is wired into the in-process
   APScheduler only; the Arq worker path (when `REDIS_URL` set) doesn't feed yet. On-demand
-  `POST /api/cards/generate` works in all modes. Gate: `CARD_FEEDER_ENABLED=1`.
+  `POST /api/cards/generate` and the per-company "Auto-refill daily" toggle work in all modes;
+  only the *automatic firing* needs the Arq path. The feeder is controlled per company (a toggle
+  on the Action Board, stored as `monitors.feed_enabled`), not a global env flag.
 - [ ] **Auto-detect replies/karma on posted cards** (the "engaged" state today is set manually
   by the founder). Real auto-detection needs per-platform read APIs (HN Algolia by item id,
   Reddit API by permalink); deep-link posting doesn't give us the new comment id. Wire when

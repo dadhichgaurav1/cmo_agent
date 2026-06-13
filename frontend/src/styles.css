@@ -498,3 +498,10 @@ body {
 .clitoggle:hover { color: var(--accent-deep); }
 .clibody { margin-top: 10px; max-width: 640px; display: flex; flex-direction: column; gap: 8px; }
 .clitoken { display: flex; flex-direction: column; gap: 6px; }
+
+/* feeder auto-refill toggle */
+.feedertoggle { font-family: var(--sans); display: inline-flex; align-items: center; gap: 7px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-3); font-size: 12px; padding: 6px 12px; border-radius: 999px; cursor: pointer; transition: all 0.12s; }
+.feedertoggle:hover { border-color: var(--accent); }
+.feedertoggle.on { background: var(--accent-tint); border-color: transparent; color: var(--accent-deep); font-weight: 500; }
+.feederdot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); }
+.feedertoggle.on .feederdot { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
