@@ -572,3 +572,12 @@ body {
 .skin-ops .persona-glyph { filter: grayscale(0.5); opacity: 0.85; font-size: 38px; }
 .skin-ops .stat-hint { display: none; }
 .skin-ops .persona-card { border-left-color: var(--ink-3); }
+
+/* --- The Daily Edge (M3) --- */
+.edge-card { background: linear-gradient(180deg, var(--accent-tint), var(--surface)); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px 28px; box-shadow: var(--shadow); }
+.edge-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.edge-kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-deep); }
+.edge-title { font-family: var(--serif); font-size: 22px; font-weight: 600; line-height: 1.25; color: var(--ink); }
+.edge-body { margin: 12px 0 18px; }
+.edge-body p { color: var(--ink-2); font-size: 14.5px; line-height: 1.65; margin-bottom: 10px; }
+.edge-cta { font-size: 13.5px; padding: 9px 18px; }

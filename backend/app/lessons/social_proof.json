@@ -1,0 +1,14 @@
+{
+  "key": "social_proof",
+  "bucket": "persuasion",
+  "one_liner": "People do what they see others like them doing.",
+  "applies_when": [
+    "try it",
+    "check out",
+    "i built",
+    "i made",
+    "sign up",
+    "launch"
+  ],
+  "fix_pattern": "Add one concrete proof point: a number, a named user, or a result."
+}

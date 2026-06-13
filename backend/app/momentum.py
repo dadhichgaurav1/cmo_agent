@@ -175,6 +175,12 @@ def _award(org_id, user_id, card, kind, tz, now) -> Optional[dict]:
     if base <= 0:
         return None
 
+    # Reading the Edge scores once per day (anti-gaming §5.5).
+    if kind == "lesson_read":
+        todays = db.list_events(org_id, slug, since=today.isoformat())
+        if any(e.get("kind") == "lesson_read" for e in todays):
+            return None
+
     breakdown = [f"{base} base"]
     bonus = 0
     new_streak_fields: dict = {}

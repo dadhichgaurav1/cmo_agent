@@ -171,6 +171,17 @@ export async function setOrgTimezone(timezone: string) {
   return r.json()
 }
 
+// --- the Daily Edge -------------------------------------------------------
+export async function getEdge(url: string) {
+  const r = await fetch(`/api/edge?slug=${slugify(url)}`, { headers: await authedHeaders() })
+  return r.json()
+}
+
+export async function readEdge(id: string) {
+  const r = await fetch(`/api/edge/${id}/read`, { method: 'POST', headers: await authedHeaders() })
+  return r.json()
+}
+
 // CLI personal access token for the build-in-public skill. Raw token returned once.
 export async function createCliToken(label: string) {
   const r = await fetch('/api/cli-tokens', { method: 'POST', headers: await jsonHeaders(), body: JSON.stringify({ label }) })

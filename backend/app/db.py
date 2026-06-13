@@ -255,6 +255,71 @@ def list_events(org_id: Optional[str], slug: Optional[str], since: Optional[str]
         return []
 
 
+def get_lesson_for_day(org_id: Optional[str], slug: str, day_key: str) -> dict:
+    sb = _sb()
+    if not sb or not org_id:
+        return {}
+    try:
+        r = (sb.table("lessons").select("*").eq("org_id", org_id)
+             .eq("company_slug", slug or "").eq("day_key", day_key).limit(1).execute())
+        rows = r.data or []
+        return rows[0] if rows else {}
+    except Exception:
+        return {}
+
+
+def create_lesson(org_id: Optional[str], lesson: dict) -> Optional[dict]:
+    sb = _sb()
+    if not sb or not org_id:
+        return None
+    try:
+        r = sb.table("lessons").insert({**lesson, "org_id": org_id}).execute()
+        rows = r.data or []
+        return rows[0] if rows else None
+    except Exception:
+        return None
+
+
+def mark_lesson(org_id: Optional[str], lesson_id: str, state: str) -> Optional[dict]:
+    sb = _sb()
+    if not sb or not org_id or not lesson_id:
+        return None
+    try:
+        r = (sb.table("lessons").update({"state": state})
+             .eq("org_id", org_id).eq("id", lesson_id).execute())
+        rows = r.data or []
+        return rows[0] if rows else None
+    except Exception:
+        return None
+
+
+def latest_lessons(org_id: Optional[str], slug: str, limit: int = 21) -> List[dict]:
+    sb = _sb()
+    if not sb or not org_id:
+        return []
+    try:
+        q = sb.table("lessons").select("principle_key, day_key, state").eq("org_id", org_id)
+        if slug:
+            q = q.eq("company_slug", slug)
+        r = q.order("day_key", desc=True).limit(limit).execute()
+        return r.data or []
+    except Exception:
+        return []
+
+
+def lessons_for_cta(org_id: Optional[str], card_id: str) -> List[dict]:
+    """Unapplied lessons whose CTA points at this card — used to award lesson_applied on ship."""
+    sb = _sb()
+    if not sb or not org_id or not card_id:
+        return []
+    try:
+        r = (sb.table("lessons").select("id, principle_key")
+             .eq("org_id", org_id).eq("cta_card_id", card_id).neq("state", "applied").execute())
+        return r.data or []
+    except Exception:
+        return []
+
+
 def org_timezone(org_id: Optional[str]) -> str:
     sb = _sb()
     if not sb or not org_id:

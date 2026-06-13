@@ -1,0 +1,18 @@
+{
+  "key": "curse_of_knowledge",
+  "bucket": "bias",
+  "one_liner": "You write for people who already know what you know.",
+  "applies_when": [
+    "api",
+    "sdk",
+    "framework",
+    "integrat",
+    "pipeline",
+    "infra",
+    "latency",
+    "throughput",
+    "kubernetes",
+    "orchestrat"
+  ],
+  "fix_pattern": "Rewrite the first line as the reader's problem in their own words, no jargon."
+}

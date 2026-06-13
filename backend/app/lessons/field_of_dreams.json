@@ -1,0 +1,15 @@
+{
+  "key": "field_of_dreams",
+  "bucket": "gtm",
+  "one_liner": "If you build it, they will NOT come. Distribution is the work.",
+  "applies_when": [
+    "launched",
+    "just shipped",
+    "now live",
+    "built",
+    "release",
+    "v1",
+    "beta"
+  ],
+  "fix_pattern": "Name where this gets seen and by whom \u2014 a specific thread, not 'social media'."
+}

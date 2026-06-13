@@ -1,0 +1,14 @@
+{
+  "key": "authority",
+  "bucket": "persuasion",
+  "one_liner": "Credibility cues make claims believable.",
+  "applies_when": [
+    "the best",
+    "trust me",
+    "guarantee",
+    "#1",
+    "revolutionary",
+    "proven"
+  ],
+  "fix_pattern": "Replace the claim with the evidence behind it \u2014 let the reader conclude it's good."
+}

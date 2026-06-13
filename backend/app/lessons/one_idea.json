@@ -1,0 +1,16 @@
+{
+  "key": "one_idea",
+  "bucket": "bias",
+  "one_liner": "One post, one idea. A second idea halves the first.",
+  "applies_when": [
+    "firstly",
+    "secondly",
+    "also,",
+    "additionally",
+    "moreover",
+    "1.",
+    "2.",
+    "3."
+  ],
+  "fix_pattern": "Keep the single strongest idea; move the rest to other posts."
+}

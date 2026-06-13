@@ -1,0 +1,13 @@
+{
+  "key": "concrete_before_after",
+  "bucket": "bias",
+  "one_liner": "Show the before and after; don't assert the value.",
+  "applies_when": [
+    "helps you",
+    "makes it easy",
+    "simplif",
+    "streamlin",
+    "effortless"
+  ],
+  "fix_pattern": "Paint the messy 'before' and the clean 'after' with a real example."
+}

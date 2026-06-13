@@ -1,0 +1,13 @@
+{
+  "key": "channel_trust",
+  "bucket": "gtm",
+  "one_liner": "Cold outbound has the lowest trust of any channel.",
+  "applies_when": [
+    "cold email",
+    "outreach",
+    "reaching out",
+    "quick question",
+    "hope this finds"
+  ],
+  "fix_pattern": "Earn context first: reference something specific to them, or warm the channel."
+}

@@ -108,6 +108,19 @@ export type MomentumAward = {
   leveled_up?: { from: string; to: string; title: string; blurb: string }
 }
 
+export type Lesson = {
+  id: string
+  company_slug?: string
+  day_key: string
+  principle_key: string
+  title: string
+  body: string
+  tie_back?: { card_id?: string; platform?: string }
+  cta_card_id?: string | null
+  cta_label?: string
+  state: 'unread' | 'read' | 'applied'
+}
+
 export type MomentumEvent = {
   id: string
   kind: string

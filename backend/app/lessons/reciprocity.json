@@ -1,0 +1,15 @@
+{
+  "key": "reciprocity",
+  "bucket": "persuasion",
+  "one_liner": "Give first; the ask lands after you've helped.",
+  "applies_when": [
+    "dm me",
+    "email me",
+    "book a call",
+    "sign up",
+    "buy",
+    "subscribe",
+    "waitlist"
+  ],
+  "fix_pattern": "Lead with something genuinely useful before the ask \u2014 answer their question first."
+}

@@ -1,0 +1,16 @@
+{
+  "key": "specificity",
+  "bucket": "bias",
+  "one_liner": "Specific beats clever. Concrete beats abstract.",
+  "applies_when": [
+    "powerful",
+    "seamless",
+    "robust",
+    "cutting-edge",
+    "revolutionary",
+    "game-chang",
+    "next-gen",
+    "best-in-class"
+  ],
+  "fix_pattern": "Replace every vague adjective with a number, an example, or a named outcome."
+}

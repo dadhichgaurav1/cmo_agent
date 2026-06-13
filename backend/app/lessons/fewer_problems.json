@@ -1,0 +1,14 @@
+{
+  "key": "fewer_problems",
+  "bucket": "gtm",
+  "one_liner": "They want fewer problems, not more features.",
+  "applies_when": [
+    "features",
+    "and also",
+    "plus",
+    "we offer",
+    "includes",
+    "capabilit"
+  ],
+  "fix_pattern": "Cut the feature list to the ONE problem this removes for them."
+}

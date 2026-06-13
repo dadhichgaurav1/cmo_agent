@@ -187,6 +187,13 @@ class ActionCardPatch(BaseModel):
     posted_url: Optional[str] = None
 
 
+class LessonOut(BaseModel):
+    """The Daily Edge: one tailored marketing-psychology lesson tied to the founder's work."""
+    title: str = ""              # punchy, specific to them — "Why your 12 likes hurt you"
+    body: str = ""              # ~120-word plain-language read, ends with the one-line fix
+    cta_label: str = ""         # send-language nudge toward the card on their board
+
+
 class CardQuery(BaseModel):
     query: str = ""
     intent: str = ""             # the kind of thread this query is meant to surface

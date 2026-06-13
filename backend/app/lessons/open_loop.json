@@ -1,0 +1,13 @@
+{
+  "key": "open_loop",
+  "bucket": "bias",
+  "one_liner": "An open loop (a question, a gap) pulls people in.",
+  "applies_when": [
+    "introducing",
+    "i'm excited",
+    "check out",
+    "here is",
+    "here's my"
+  ],
+  "fix_pattern": "Open with a question or an unfinished tension, not an announcement."
+}

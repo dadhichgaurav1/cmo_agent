@@ -32,6 +32,7 @@ from app import config
 from app import db
 from app import graph as agent_graph
 from app import landing as landing_mod
+from app import lessons as lessons_mod
 from app import models as M
 from app import momentum
 from app import monitors
@@ -261,6 +262,9 @@ async def cards_patch(card_id: str, body: ActionCardPatch, ctx: dict = Depends(c
     kind = momentum.classify_transition(prev, patch)
     award = momentum.award(org_id, ctx.get("user_id"), updated, kind,
                            db.org_timezone(org_id)) if kind else None
+    if kind == "card_posted":
+        # If this card was a Daily Edge's CTA, mark it applied + award the lesson_applied bonus.
+        lessons_mod.award_applied_for_card(org_id, ctx.get("user_id"), updated, db.org_timezone(org_id))
     # Loop-back (P4): the founder shipping/engaging IS the success signal. Record it to Synap so
     # the next generate_cards batch leans toward the kind of thread that actually got acted on.
     if patch.get("state") in ("posted", "engaged"):
@@ -307,6 +311,32 @@ class TimezoneBody(BaseModel):
 async def set_timezone(body: TimezoneBody, ctx: dict = Depends(current_context)):
     db.set_org_timezone(ctx.get("org_id"), body.timezone)
     return {"ok": True}
+
+
+# --- The Daily Edge (one tailored marketing lesson a day) ------------------
+@app.get("/api/edge")
+async def edge_view(slug: str | None = None, ctx: dict = Depends(current_context)):
+    """Today's lesson, generated lazily. {"lesson": null} is a valid skipped day."""
+    org_id = ctx.get("org_id")
+    if not config.MOMENTUM_ENABLED or not org_id:
+        return {"lesson": None}
+    today = momentum.day_key(db.org_timezone(org_id))
+    lesson = await lessons_mod.get_or_create_lesson(org_id, slug or "", today)
+    return {"lesson": lesson}
+
+
+@app.post("/api/edge/{lesson_id}/read")
+async def edge_read(lesson_id: str, ctx: dict = Depends(current_context)):
+    org_id = ctx.get("org_id")
+    lesson = db.mark_lesson(org_id, lesson_id, "read")
+    # award lesson_read (once/day cap enforced in momentum.award via the events log)
+    award = momentum.award(org_id, ctx.get("user_id"),
+                           {"company_slug": (lesson or {}).get("company_slug") or ""},
+                           "lesson_read", db.org_timezone(org_id))
+    resp = {"lesson": lesson}
+    if award:
+        resp["momentum"] = award
+    return resp
 
 
 # --- CLI personal access tokens (for the build-in-public skill) -----------

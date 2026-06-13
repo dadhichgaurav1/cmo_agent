@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getMomentumEvents } from './api'
 import { PERSONA_GLYPH } from './MomentumChip'
-import type { Momentum as Mom, MomentumEvent } from './types'
+import EdgeCard from './EdgeCard'
+import type { Lesson, Momentum as Mom, MomentumAward, MomentumEvent } from './types'
 
 const KIND_LABEL: Record<string, string> = {
   card_posted: 'Shipped',
@@ -28,7 +29,13 @@ function localDayKeys(n: number): string[] {
   return out.reverse()
 }
 
-export default function Momentum({ url, m, companyType }: { url: string; m: Mom | null; companyType?: string }) {
+export default function Momentum({ url, m, companyType, edge, onMomentum, onGoToBoard, onEdgeRead }: {
+  url: string; m: Mom | null; companyType?: string
+  edge?: Lesson | null
+  onMomentum?: (a: MomentumAward) => void
+  onGoToBoard?: () => void
+  onEdgeRead?: () => void
+}) {
   const [events, setEvents] = useState<MomentumEvent[]>([])
   const [skin, setSkin] = useState<'ops' | 'hype'>(() =>
     (localStorage.getItem('momentum_skin') as 'ops' | 'hype') || inferSkin(companyType))
@@ -70,6 +77,13 @@ export default function Momentum({ url, m, companyType }: { url: string; m: Mom 
           {skin === 'ops' ? '⚙ Ops' : '🔥 Hype'}
         </button>
       </div>
+
+      {/* The Daily Edge */}
+      {edge && (
+        <EdgeCard lesson={edge}
+          onMomentum={(a) => { onMomentum?.(a); onEdgeRead?.() }}
+          onGoToBoard={onGoToBoard} />
+      )}
 
       {/* Persona card */}
       <div className="persona-card">

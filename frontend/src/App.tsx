@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { analyze, chatApi, researchApi, uiRender, landingSpec, landingPrompt, memoryView, monitorsView, runMonitors, openInTab, openPrintable, escapeHtml, getMomentum, setOrgTimezone } from './api'
+import { analyze, chatApi, researchApi, uiRender, landingSpec, landingPrompt, memoryView, monitorsView, runMonitors, openInTab, openPrintable, escapeHtml, getMomentum, setOrgTimezone, getEdge } from './api'
 import ActionBoard from './ActionBoard'
 import Momentum from './Momentum'
 import MomentumChip, { PERSONA_GLYPH } from './MomentumChip'
-import type { Ev, Profile, Objective, Source, Opp, Artifact, Discarded, Capability, MonitorJob, ChangelogEntry, MemoryView, Momentum as Mom, MomentumAward } from './types'
+import type { Ev, Profile, Objective, Source, Opp, Artifact, Discarded, Capability, MonitorJob, ChangelogEntry, MemoryView, Momentum as Mom, MomentumAward, Lesson } from './types'
 
 function modelColor(m?: string) {
   if (!m) return '#8a8378'
@@ -211,6 +211,7 @@ export default function App() {
   const [caps, setCaps] = useState<Capability[]>([])
   const [monitorJobs, setMonitorJobs] = useState<MonitorJob[]>([])
   const [momentum, setMomentum] = useState<Mom | null>(null)
+  const [edge, setEdge] = useState<Lesson | null>(null)
   const [toast, setToast] = useState<MomentumAward | null>(null)
   const [levelUp, setLevelUp] = useState<MomentumAward['leveled_up'] | null>(null)
   const esRef = useRef<EventSource | null>(null)
@@ -222,6 +223,7 @@ export default function App() {
   }, [])
   useEffect(() => {
     getMomentum(url).then((r) => setMomentum(r.momentum ?? null)).catch(() => {})
+    getEdge(url).then((r) => setEdge(r.lesson ?? null)).catch(() => {})
   }, [url])
 
   // An award came back from a card PATCH — refresh the chip, toast it, and catch level-ups.
@@ -280,7 +282,7 @@ export default function App() {
           <div className="wordmark"><span className="mark">◆</span> StratCMO</div>
           <div className="sub">market intelligence that acts like a cofounder, not a tracker</div>
         </div>
-        {started && momentum && <MomentumChip m={momentum} onClick={() => setTab('momentum')} />}
+        {started && momentum && <MomentumChip m={momentum} onClick={() => setTab('momentum')} unreadEdge={!!edge && edge.state === 'unread'} />}
         <div className="controls">
           <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="company url e.g. resend.com" onKeyDown={(e) => e.key === 'Enter' && run()} />
           <div className="toggle">
@@ -326,7 +328,11 @@ export default function App() {
         <BriefTab {...{ objective, profile, companyType, sources, radar, strategic, artifacts, ledger, trace, running, openTrace, url }} />
       )}
       {started && tab === 'actions' && <ActionBoard url={url} radar={radar} artifacts={artifacts} onMomentum={onMomentum} />}
-      {started && tab === 'momentum' && <Momentum url={url} m={momentum} companyType={companyType} />}
+      {started && tab === 'momentum' && (
+        <Momentum url={url} m={momentum} companyType={companyType} edge={edge}
+          onMomentum={onMomentum} onGoToBoard={() => setTab('actions')}
+          onEdgeRead={() => setEdge((e) => e ? { ...e, state: 'read' } : e)} />
+      )}
       {tab === 'synap' && <SynapTab url={url} />}
       {tab === 'monitors' && <MonitorsTab url={url} jobs={monitorJobs} />}
       {tab === 'reasoning' && <ReasoningTab ledger={ledger} />}

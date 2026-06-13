@@ -1,0 +1,14 @@
+{
+  "key": "loss_aversion",
+  "bucket": "persuasion",
+  "one_liner": "People fear losing more than they want gaining.",
+  "applies_when": [
+    "save time",
+    "faster",
+    "improve",
+    "boost",
+    "increase",
+    "optimi"
+  ],
+  "fix_pattern": "Frame the cost of NOT acting \u2014 what it's quietly costing them today."
+}
