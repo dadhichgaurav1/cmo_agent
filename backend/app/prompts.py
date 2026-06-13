@@ -22,6 +22,23 @@ Return: a one-line voice description, and 4-7 specific, actionable rules (length
 what to avoid) that make a post read native and non-promotional on THIS channel.
 Be concrete to the channel, not generic. No em-dashes anywhere."""
 
+GENQ_SYS = (CMO_PERSONA + " You turn a company's positioning into precise search queries that surface "
+            "LIVE online threads where the company could engage naturally and helpfully — not threads about the company itself.")
+
+
+def genq_human(profile, objective, platform, n):
+    kws = ", ".join(profile.get("keywords", []) or [])
+    return f"""Company: {profile.get('name')} — {profile.get('one_liner')}
+Category: {profile.get('category')} | ICP: {profile.get('icp')} | Stage: {profile.get('stage')}
+Keywords: {kws}
+Objective: {objective.get('objective')}
+
+Generate {n} specific search queries to find RECENT {platform} threads/posts where this company could add genuine value
+and naturally belong: questions its ICP is asking, problems it solves, "how do I / what do you use for" posts, comparisons.
+NOT queries about the company itself or its brand name. Surface the conversations its buyers are having right now.
+Each query is short and specific, the kind you would actually type into search. For each, note the intent (the kind of thread it finds)."""
+
+
 OBJECTIVE_SYS = CMO_PERSONA + " You infer a company's profile and the single right marketing objective for its stage."
 SOURCES_SYS = CMO_PERSONA + " You map a company to where its customers and influencers actually gather."
 PLAN_SYS = CMO_PERSONA + " You turn an objective into concrete research moves that hunt non-obvious wedges and adjacencies."

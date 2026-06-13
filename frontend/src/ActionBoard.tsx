@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { listCards, patchCard, deleteCard } from './api'
+import { listCards, patchCard, deleteCard, generateCards } from './api'
 import { PLATFORMS, cardAction, classifyPlatform } from './deeplinks'
 import type { ActionCard, CardState, Opp, Artifact } from './types'
 
@@ -101,6 +101,8 @@ export default function ActionBoard({ url, radar, artifacts }: {
 }) {
   const [cards, setCards] = useState<ActionCard[]>([])
   const [busy, setBusy] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [note, setNote] = useState('')
   const [serverBacked, setServerBacked] = useState(false)
 
   async function load() {
@@ -114,6 +116,16 @@ export default function ActionBoard({ url, radar, artifacts }: {
       setCards(deriveLocalCards(radar, artifacts)); setServerBacked(false)
     }
     setBusy(false)
+  }
+
+  async function generate() {
+    setGenerating(true); setNote('')
+    try {
+      const r = await generateCards(url)
+      if (r.created > 0) { await load(); setNote(`${r.created} fresh ${r.created === 1 ? 'card' : 'cards'} drafted`) }
+      else setNote('No new threads found this round. Try again later, or run an analysis first.')
+    } catch { setNote('Could not generate cards.') }
+    setGenerating(false)
   }
   useEffect(() => { load() }, [url])  // eslint-disable-line react-hooks/exhaustive-deps
   // when a fresh run lands new radar/artifacts and we have no server cards, reflect them
@@ -146,7 +158,13 @@ export default function ActionBoard({ url, radar, artifacts }: {
           <p className="panellede">One swimlane per platform. Copy the draft, open the thread, paste, and you press send.
             StratCMO drafts and queues; it never posts for you.</p>
         </div>
-        <button className="mini" onClick={load} disabled={busy}>{busy ? 'loading…' : 'refresh'}</button>
+        <div className="panelactions">
+          {note && <span className="muted boardnote">{note}</span>}
+          <button className="mini" onClick={load} disabled={busy || generating}>{busy ? 'loading…' : 'refresh'}</button>
+          <button className="run" onClick={generate} disabled={generating || busy}>
+            {generating ? 'finding threads…' : '✨ Generate cards'}
+          </button>
+        </div>
       </div>
 
       {!visible.length && (

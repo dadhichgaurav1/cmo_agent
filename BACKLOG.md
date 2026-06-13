@@ -50,3 +50,13 @@ The core launch work and its status live in [LAUNCH_PLAN.md](LAUNCH_PLAN.md).
 - [ ] **Execute DPAs** with subprocessors that handle customer data (esp. Maximem Synap).
 - [ ] **Legal review** of `TERMS.md` / `PRIVACY.md` templates before launch.
 - [ ] **Confirm Synap ownership model** (brains are org-scoped `org_id:slug`) before customer onboarding.
+
+## Action Board (added during P1/P2 build)
+- [ ] **HN reply cards link to the story's external URL, not the HN item page** when the
+  Composio HN provider is used (native `tools.hn_search` already returns `item?id=` URLs).
+  Affects the engagement radar too — it shares the research layer. Fix: prefer the HN item
+  URL for `reply` cards, or normalize Composio HN results to the discussion page.
+  - Trigger: when HN becomes a primary engagement channel for customers.
+- [ ] **Daily card feeder in Redis/Arq mode** — `feed_all_cards` is wired into the in-process
+  APScheduler only; the Arq worker path (when `REDIS_URL` set) doesn't feed yet. On-demand
+  `POST /api/cards/generate` works in all modes. Gate: `CARD_FEEDER_ENABLED=1`.

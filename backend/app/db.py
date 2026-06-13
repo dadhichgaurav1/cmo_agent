@@ -100,7 +100,7 @@ def latest_run(org_id: Optional[str], slug: str) -> dict:
     if not sb or not org_id:
         return {}
     try:
-        r = (sb.table("runs").select("id, summary")
+        r = (sb.table("runs").select("id, company_url, summary")
              .eq("org_id", org_id).eq("company_slug", slug).eq("status", "done")
              .order("started_at", desc=True).limit(1).execute())
         rows = r.data or []

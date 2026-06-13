@@ -185,3 +185,13 @@ class ActionCardPatch(BaseModel):
     title: Optional[str] = None
     position: Optional[int] = None
     posted_url: Optional[str] = None
+
+
+class CardQuery(BaseModel):
+    query: str = ""
+    intent: str = ""             # the kind of thread this query is meant to surface
+
+
+class CardQueries(BaseModel):
+    """Search queries that find live threads where the company could naturally engage."""
+    queries: List[CardQuery] = Field(default_factory=list)

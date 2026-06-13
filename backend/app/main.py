@@ -100,6 +100,7 @@ CACHE_DIR = os.path.join(os.path.dirname(__file__), "..", "cache")
 async def _startup():
     # Addendum 1: the graph runs monitors, the scheduler fires them, monitors.py bridges the two.
     monitors.set_runner(agent_graph.run_monitor)
+    monitors.set_feeder(agent_graph.feed_all_cards)  # Action Board daily card feeder (gated by config)
     monitors.start_scheduler()
 
 
@@ -201,10 +202,29 @@ async def cards_create(body: ActionCardCreate, ctx: dict = Depends(current_conte
     if not org_id:
         raise HTTPException(status_code=400, detail="no workspace")
     card = body.model_dump()
-    if not card.get("platform"):
+    if not card.get("platform") or card["platform"] == "other":
         card["platform"] = cards_mod.classify_platform(card.get("target_url"), card.get("title"))
     created = db.create_card(org_id, card)
     return {"card": created}
+
+
+class GenerateBody(BaseModel):
+    slug: str
+    platforms: list[str] | None = None
+    per_platform: int = 2
+
+
+@app.post("/api/cards/generate")
+async def cards_generate(body: GenerateBody, request: Request, ctx: dict = Depends(current_context)):
+    """The feeder, on demand: find fresh threads to engage and draft platform-voiced replies,
+    queued as cards. Counts as a run-class action for rate-limit/quota."""
+    _enforce(ctx, request, "run")
+    org_id = ctx.get("org_id")
+    if not org_id:
+        raise HTTPException(status_code=400, detail="no workspace")
+    created = await agent_graph.generate_cards(org_id, body.slug, body.platforms, body.per_platform)
+    db.record_usage(org_id, "run", 1, {"generate_cards": body.slug})
+    return {"created": len(created), "cards": created}
 
 
 @app.patch("/api/cards/{card_id}")

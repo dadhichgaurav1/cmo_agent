@@ -10,13 +10,22 @@ from typing import TypedDict
 
 from langgraph.graph import START, END, StateGraph
 
-from app import capabilities, composio_tools, db, email, models, monitors, prompts, skills, tools
+from app import capabilities, composio_tools, config, db, email, models, monitors, prompts, skills, tools
 from app.memory import memory
 from app.tenancy import customer_scope
 from app.schemas import (
-    Artifact, DiffOut, MonitorPlan, ProfileObjective, PlanOut, ReflectOut,
+    Artifact, CardQueries, DiffOut, MonitorPlan, ProfileObjective, PlanOut, ReflectOut,
     SourceStrategy, SynthesisOut,
 )
+
+# Action Board feeder: which builtin/search access to use per platform, and which writing
+# skill voices the draft. reddit/hackernews are builtin; x/indiehackers fall back through
+# capabilities.research (discover -> EXA), keeping the engine dependency-light.
+PLATFORM_ACCESS = {"reddit": "reddit", "hackernews": "hackernews", "x": "twitter",
+                   "linkedin": "linkedin", "indiehackers": "exa"}
+PLATFORM_SKILL = {"reddit": "reddit_reply", "hackernews": "hn_comment", "x": "twitter_reply",
+                  "linkedin": "linkedin_post", "indiehackers": "indiehackers_comment"}
+DEFAULT_GEN_PLATFORMS = ["reddit", "hackernews", "x"]
 
 CAP = 5  # max research iterations
 
@@ -273,7 +282,10 @@ async def remember(state: S, config) -> S:
                 "data": capabilities.registry_snapshot()})
     await emit({"type": "done", "label": "Done",
                 "data": {"opportunities": state.get("opportunities", []), "artifacts": state.get("artifacts", []),
-                         "ledger": state.get("ledger", [])}})
+                         "ledger": state.get("ledger", []),
+                         # profile + objective ride along so the Action Board feeder can generate
+                         # fresh cards later without re-running the full analysis.
+                         "profile": state.get("profile", {}), "objective": state.get("objective", {})}})
     return {}
 
 
@@ -361,3 +373,104 @@ async def run_monitor(org_id, slug: str, job: dict, emit=None) -> dict:
     await emit({"type": "update", "label": f"{name}: {len(diff.new)} new, {len(diff.changed)} changed",
                 "data": entry, "model": "claude-sonnet-4-6"})
     return entry
+
+
+async def _resolve_profile(org_id, slug: str):
+    """Profile + objective for the Action Board feeder. Prefer the latest run's summary
+    (runs now carry them); fall back to inferring from the site so old runs still work."""
+    run = db.latest_run(org_id, slug)
+    summary = run.get("summary") or {}
+    profile, objective = summary.get("profile") or {}, summary.get("objective") or {}
+    if profile.get("name"):
+        return profile, objective, run
+    url = run.get("company_url") or ""
+    if not url:
+        return {}, {}, run
+    try:
+        site = await tools.fetch_site(url)
+        out, _ = await models.run_structured(
+            "objective", prompts.OBJECTIVE_SYS, prompts.objective_human(url, site, ""), ProfileObjective)
+        prof = out.profile.model_dump(); prof["url"] = url
+        return prof, out.objective.model_dump(), run
+    except Exception:
+        return {}, {}, run
+
+
+async def generate_cards(org_id, slug: str, platforms=None, per_platform: int = 2, emit=None) -> list:
+    """The suggestion engine + daily-grind feeder: for each platform, find live threads the
+    company could naturally engage, draft a platform-voiced reply, and queue them as cards.
+    Dedupes against threads already on the board so the feeder never re-suggests the same one."""
+    async def _noop(_ev):
+        return None
+    emit = emit or _noop
+    platforms = [p for p in (platforms or DEFAULT_GEN_PLATFORMS) if p in PLATFORM_ACCESS]
+    profile, objective, run = await _resolve_profile(org_id, slug)
+    if not profile.get("name"):
+        await emit({"type": "step", "label": "No analysis yet — run one first to seed the feeder", "model": "synap"})
+        return []
+
+    scope = customer_scope(org_id, slug)
+    prefs = await memory.recall_user(scope, ["founder voice", "tone", "writing style"], user_id=None)
+    humanizer = await skills.resolve_skill("humanizer", emit)
+    seen = {c.get("target_url") for c in db.list_cards(org_id, slug) if c.get("target_url")}
+    new_cards: list = []
+
+    for platform in platforms:
+        access = PLATFORM_ACCESS.get(platform, "exa")
+        voice = await skills.resolve_skill(PLATFORM_SKILL.get(platform, "outreach"), emit)
+        try:
+            q, _ = await models.run_structured(
+                "plan", prompts.GENQ_SYS, prompts.genq_human(profile, objective, platform, per_platform + 1),
+                CardQueries, temperature=0.5, max_tokens=800)
+            queries = [x.query for x in q.queries if x.query][: per_platform + 1]
+        except Exception:
+            queries = []
+        made = 0
+        for query in queries:
+            if made >= per_platform:
+                break
+            await emit({"type": "step", "label": f"{platform}: searching '{query[:48]}'", "model": access})
+            found = await capabilities.research(access, query, 4, emit,
+                                                entity_id=composio_tools.entity_for(org_id))
+            for f in found:
+                if made >= per_platform:
+                    break
+                url = (f.url or "").strip()
+                if not url or url in seen:
+                    continue
+                seen.add(url)
+                opp = {"title": f.title, "source_name": platform, "template_id": PLATFORM_SKILL.get(platform, ""),
+                       "why": (f.snippet or "")[:240], "thread_url": url}
+                sys_aug = prompts.DRAFT_SYS + skills.render([humanizer, voice])
+                body, _name = await models.run_text("draft", sys_aug,
+                                                    prompts.draft_human(profile, objective, opp, prefs), max_tokens=700)
+                new_cards.append({
+                    "run_id": run.get("id"), "company_slug": slug, "source": "agent", "platform": platform,
+                    "kind": "reply", "target_url": url, "target_title": f.title, "title": f.title,
+                    "body": body, "voice": voice.name if voice else "", "state": "drafted",
+                    "metadata": {"why": (f.snippet or "")[:240], "query": query},
+                })
+                made += 1
+        await emit({"type": "step", "label": f"{platform}: {made} cards drafted", "model": "claude-haiku-4-5"})
+
+    created = db.bulk_create_cards(org_id, new_cards) if new_cards else []
+    return created or new_cards
+
+
+async def feed_all_cards() -> int:
+    """Daily feeder entry point: generate fresh cards for every active company (one that has
+    monitors). Gated by config.CARD_FEEDER_ENABLED. Returns the number of cards created."""
+    if not config.CARD_FEEDER_ENABLED:
+        return 0
+    total = 0
+    seen = set()
+    for m in monitors.all_monitors():
+        org_id, slug = m.get("org_id"), m.get("slug")
+        if not slug or (org_id, slug) in seen:
+            continue
+        seen.add((org_id, slug))
+        try:
+            total += len(await generate_cards(org_id, slug))
+        except Exception:
+            pass
+    return total

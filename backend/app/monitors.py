@@ -28,6 +28,7 @@ _CHANGELOG = os.getenv("CHANGELOG_PATH", "/tmp/cmo_changelog.json")
 CADENCE_SECONDS = {"daily": 86400, "weekly": 604800, "monthly": 2592000}
 
 _runner: Optional[Callable[[Optional[str], str, dict], Awaitable[dict]]] = None
+_feeder: Optional[Callable[[], Awaitable[int]]] = None  # Action Board daily card feeder
 _scheduler = None
 
 
@@ -109,6 +110,21 @@ def set_runner(fn: Callable[[Optional[str], str, dict], Awaitable[dict]]) -> Non
     _runner = fn
 
 
+def set_feeder(fn: Callable[[], Awaitable[int]]) -> None:
+    """Inject the Action Board daily card feeder (graph.feed_all_cards) — registered on a
+    daily trigger by start_scheduler. The feeder itself no-ops unless CARD_FEEDER_ENABLED."""
+    global _feeder
+    _feeder = fn
+
+
+async def _fire_feeder() -> None:
+    if _feeder is not None:
+        try:
+            await _feeder()
+        except Exception:
+            pass
+
+
 def redis_enabled() -> bool:
     return bool(config.REDIS_URL)
 
@@ -133,6 +149,14 @@ def start_scheduler() -> bool:
         return False
     for m in all_monitors():
         _schedule_slug(m.get("org_id"), m.get("slug"), m.get("jobs", []))
+    if _feeder is not None:
+        try:
+            from apscheduler.triggers.interval import IntervalTrigger
+            _scheduler.add_job(_fire_feeder, IntervalTrigger(seconds=CADENCE_SECONDS["daily"]),
+                               id="action_board_feeder", replace_existing=True,
+                               misfire_grace_time=3600, coalesce=True)
+        except Exception:
+            pass
     return True
 
 

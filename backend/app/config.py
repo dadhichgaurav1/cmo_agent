@@ -57,6 +57,12 @@ ALLOWED_ORIGINS = _get("ALLOWED_ORIGINS")
 RESEND_API_KEY = _get("RESEND_API_KEY")
 RESEND_FROM = _get("RESEND_FROM") or "StratCMO <noreply@stratcmo.app>"
 
+# Action Board daily feeder: when "1", the scheduler auto-generates fresh engagement cards
+# for every active company once a day (the "daily-grind feeder"). Off by default — it makes
+# LLM calls per company, so production opts in deliberately. On-demand generation
+# (POST /api/cards/generate) is always available regardless of this flag.
+CARD_FEEDER_ENABLED = _get("CARD_FEEDER_ENABLED") == "1"
+
 
 def has(value: str) -> bool:
     return bool(value and value.strip())

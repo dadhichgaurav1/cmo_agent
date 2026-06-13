@@ -475,3 +475,5 @@ body {
 .swimactions button.ghost { color: var(--ink-3); }
 .swimhint { font-size: 10.5px; color: var(--ink-3); }
 @media (max-width: 720px) { .boardrow { grid-template-columns: 96px repeat(3, minmax(180px, 1fr)); } }
+.panelactions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.boardnote { font-size: 12px; }

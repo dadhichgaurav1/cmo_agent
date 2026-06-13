@@ -126,6 +126,14 @@ export async function deleteCard(id: string) {
   return r.json()
 }
 
+export async function generateCards(url: string, platforms?: string[], perPlatform = 2) {
+  const r = await fetch('/api/cards/generate', {
+    method: 'POST', headers: await jsonHeaders(),
+    body: JSON.stringify({ slug: slugify(url), platforms, per_platform: perPlatform }),
+  })
+  return r.json()
+}
+
 export async function usageView() {
   const r = await fetch('/api/usage', { headers: await authedHeaders() })
   return r.json()
