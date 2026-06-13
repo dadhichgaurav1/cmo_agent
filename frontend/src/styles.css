@@ -313,6 +313,14 @@ body {
 .lp-mock-chip { font-size: 13px; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 9px; padding: 7px 11px; display: inline-flex; align-items: center; gap: 8px; }
 .lp-mock-chip em { font-style: normal; font-size: 10.5px; color: var(--ink-3); background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; }
 
+/* problem / empathy beat */
+.lp-problem { max-width: 760px; margin: 0 auto; padding: 64px 24px; text-align: center; }
+.lp-problem h2 { font-family: var(--serif); font-weight: 500; font-size: 34px; line-height: 1.16; letter-spacing: -0.02em; color: var(--ink); margin-top: 14px; }
+@media (max-width: 480px) { .lp-problem h2 { font-size: 27px; } }
+.lp-problem-beats { display: flex; flex-direction: column; gap: 16px; margin: 30px auto 0; max-width: 600px; }
+.lp-problem-beat { font-size: 17px; line-height: 1.6; color: var(--ink-2); }
+.lp-problem-bridge { font-family: var(--serif); font-size: 20px; font-style: italic; color: var(--accent-deep); margin-top: 28px; }
+
 /* "what you get" returns strip */
 .lp-returns { max-width: 1180px; margin: 0 auto; padding: 56px 24px; border-top: 1px solid var(--line); }
 .lp-section-head { max-width: 640px; margin-bottom: 36px; }

@@ -12,6 +12,7 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
     <div className="lp">
       <Nav onEnter={onEnter} />
       <Hero onEnter={onEnter} />
+      <Problem />
       <Returns />
       <Features />
       <HowItWorks onEnter={onEnter} />
@@ -104,6 +105,26 @@ function BriefMock() {
         </div>
       </div>
     </div>
+  )
+}
+
+function Problem() {
+  const beats = [
+    'Your buyers are answering each other in subreddits, Slacks and threads you don’t even know exist — and your competitors are already in there.',
+    'You’ve tried the tools. They count mentions and hand you a dashboard. A dashboard is not a decision.',
+    'You don’t need more data about the market. You need someone who tells you the next move — and drafts it.',
+  ]
+  return (
+    <section className="lp-problem">
+      <span className="lp-kicker">The job nobody trained you for</span>
+      <h2>You can build the product. Nobody taught you the marketing.</h2>
+      <div className="lp-problem-beats">
+        {beats.map((b, i) => (
+          <p className="lp-problem-beat" key={i}>{b}</p>
+        ))}
+      </div>
+      <div className="lp-problem-bridge">That’s the read StratCMO gives you.</div>
+    </section>
   )
 }
 
@@ -208,8 +229,8 @@ function Features() {
 
       <Feature
         verb="Watch"
-        title="Read deltas, not dashboards."
-        body="The agent decides what's worth watching and sets recurring monitors. Each run diffs against memory and surfaces only what's new — a feed of changes, not noise."
+        title="Read what changed, not another dashboard."
+        body="The agent decides what's worth watching and sets recurring monitors. Each run compares against what it already knew and surfaces only what's new — a feed of changes, not noise."
         art={
           <div className="lp-fart">
             <div className="lp-mock-monitor">
