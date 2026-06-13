@@ -161,7 +161,31 @@ Depends on orgs + entitlement storage (Phase 1) and ideally usage tracking (Phas
 
 ---
 
-## Phase 5 — Observability + launch polish  ⬜ NOT STARTED (run in parallel)
+## Phase 5 — Observability + launch polish  ✅ DONE (core); Langfuse + Composio OAuth deferred
+
+Shipped this phase:
+- **Sentry**: backend (`sentry_sdk.init` gated on `SENTRY_DSN`) + frontend (lazy `@sentry/react`
+  gated on `VITE_SENTRY_DSN`, separate chunk so the main bundle stays lean).
+- **Security**: CORS locked to `ALLOWED_ORIGINS` in prod (permissive only when unset);
+  security-headers middleware (nosniff / DENY / referrer-policy).
+- **Data deletion**: `DELETE /api/workspace` (owner-only, cascades) + `DELETE /api/account`
+  (deletes owned workspaces + the Supabase auth user via admin). db helpers added.
+- **Email**: `app/email.py` (Resend, gated on `RESEND_API_KEY`); best-effort monitor-alert email
+  to the workspace owner when a monitor surfaces new/changed signal.
+- **Per-org Composio**: `entity_for(org_id)` threaded through `capabilities.research` →
+  `tools.run_tool` / `composio_tools` so authed tools use a per-org entity; `/api/integrations`
+  GET/POST/DELETE + db CRUD to track connections.
+- **Legal**: `TERMS.md` + `PRIVACY.md` templates (incl. subprocessor list + DPA + deletion paths).
+- render.yaml + .env.example updated for all of the above.
+
+Still deferred (the original "research" items):
+- **LLM tracing (Langfuse/LangSmith)** — needs callback wiring into `models.py`; not done.
+- **Composio OAuth connect flow** — the entity plumbing + integrations table are ready, but the
+  live per-org account-connect (OAuth) is SDK/key-specific and not wired.
+- Frontend: settings UI for delete-account / manage-integrations (endpoints exist; no UI yet).
+- DPA execution with Synap/subprocessors (process, not code).
+
+### Original checklist (for reference)
 
 ### Observability
 - [ ] Error tracking: **Sentry** (backend + frontend).

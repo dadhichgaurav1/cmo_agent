@@ -218,6 +218,94 @@ def usage_count(org_id: Optional[str], kind: str, since_iso: str) -> int:
         return 0
 
 
+# --- integrations (per-org Composio connections) --------------------------
+def list_integrations(org_id: Optional[str]) -> List[dict]:
+    sb = _sb()
+    if not sb or not org_id:
+        return []
+    try:
+        r = sb.table("integrations").select("*").eq("org_id", org_id).execute()
+        return r.data or []
+    except Exception:
+        return []
+
+
+def upsert_integration(org_id: str, provider: str, connection_id: Optional[str],
+                       status: str, metadata: Optional[dict] = None) -> None:
+    sb = _sb()
+    if not sb or not org_id:
+        return
+    try:
+        sb.table("integrations").upsert({
+            "org_id": org_id, "provider": provider, "connection_id": connection_id,
+            "status": status, "metadata": metadata or {},
+        }, on_conflict="org_id,provider").execute()
+    except Exception:
+        pass
+
+
+def delete_integration(org_id: str, provider: str) -> None:
+    sb = _sb()
+    if not sb or not org_id:
+        return
+    try:
+        sb.table("integrations").delete().eq("org_id", org_id).eq("provider", provider).execute()
+    except Exception:
+        pass
+
+
+# --- account / workspace deletion + owner lookup ---------------------------
+def org_owner_email(org_id: Optional[str]) -> Optional[str]:
+    sb = _sb()
+    if not sb or not org_id:
+        return None
+    try:
+        r = (sb.table("org_members").select("user_id")
+             .eq("org_id", org_id).eq("role", "owner").limit(1).execute())
+        rows = r.data or []
+        if not rows:
+            return None
+        p = sb.table("profiles").select("email").eq("id", rows[0]["user_id"]).limit(1).execute()
+        prows = p.data or []
+        return prows[0]["email"] if prows else None
+    except Exception:
+        return None
+
+
+def owned_org_ids(user_id: Optional[str]) -> List[str]:
+    sb = _sb()
+    if not sb or not user_id:
+        return []
+    try:
+        r = sb.table("org_members").select("org_id").eq("user_id", user_id).eq("role", "owner").execute()
+        return [row["org_id"] for row in (r.data or [])]
+    except Exception:
+        return []
+
+
+def delete_org(org_id: Optional[str]) -> None:
+    """Deletes the org; FK ON DELETE CASCADE removes its runs/monitors/usage/etc."""
+    sb = _sb()
+    if not sb or not org_id:
+        return
+    try:
+        sb.table("organizations").delete().eq("id", org_id).execute()
+    except Exception:
+        pass
+
+
+def delete_user(user_id: Optional[str]) -> bool:
+    """Deletes the Supabase auth user (service-role admin). Cascades profile + memberships."""
+    sb = _sb()
+    if not sb or not user_id:
+        return False
+    try:
+        sb.auth.admin.delete_user(user_id)
+        return True
+    except Exception:
+        return False
+
+
 # --- usage metering (billing + cost caps) ---------------------------------
 def record_usage(org_id: Optional[str], kind: str, quantity: float = 1,
                  metadata: Optional[Dict[str, Any]] = None) -> None:

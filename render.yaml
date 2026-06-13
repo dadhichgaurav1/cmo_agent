@@ -39,6 +39,22 @@ services:
       # this web service and the worker below. Leave unset to use the in-process scheduler.
       - key: REDIS_URL
         sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_PRO
+        sync: false
+      - key: APP_BASE_URL
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        sync: false
 
   # Background worker: runs scheduled monitors off the web process (see backend/app/worker.py).
   # Only does anything once REDIS_URL is set; deploy it alongside a Redis/Key-Value instance.
@@ -75,4 +91,10 @@ services:
       - key: SUPABASE_JWT_SECRET
         sync: false
       - key: REDIS_URL
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
         sync: false

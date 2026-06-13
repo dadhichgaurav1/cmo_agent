@@ -89,12 +89,12 @@ async def fetch_site(url: str, max_chars: int = 6000) -> str:
     return text[:max_chars]
 
 
-async def run_tool(access: str, query: str, num: int = 4) -> List[Finding]:
+async def run_tool(access: str, query: str, num: int = 4, entity_id: str = "") -> List[Finding]:
     """Dispatch a research move. Community sources (HN/Reddit) route through Composio when
     the key is valid; everything falls back so a move never returns empty."""
     if access in ("hackernews", "reddit"):
         from app import composio_tools
-        via = await composio_tools.composio_search(access, query, num)
+        via = await composio_tools.composio_search(access, query, num, entity_id=entity_id)
         if via:
             return via
         if access == "hackernews":

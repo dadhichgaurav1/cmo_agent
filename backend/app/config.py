@@ -49,6 +49,14 @@ STRIPE_PRICE_PRO = _get("STRIPE_PRICE_PRO")
 # Public base URL of the app, for Stripe success/cancel/return redirects.
 APP_BASE_URL = _get("APP_BASE_URL") or "http://localhost:5173"
 
+# Observability + security + email. All optional — unset = disabled, app runs as before.
+SENTRY_DSN = _get("SENTRY_DSN")
+# Comma-separated allowed CORS origins for production. Empty => permissive "*" (local/demo).
+ALLOWED_ORIGINS = _get("ALLOWED_ORIGINS")
+# Resend transactional email. RESEND_FROM must be a verified sender/domain.
+RESEND_API_KEY = _get("RESEND_API_KEY")
+RESEND_FROM = _get("RESEND_FROM") or "StratCMO <noreply@stratcmo.app>"
+
 
 def has(value: str) -> bool:
     return bool(value and value.strip())

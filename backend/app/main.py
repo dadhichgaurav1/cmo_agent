@@ -43,13 +43,35 @@ def _enforce(ctx: dict, request: Request, kind: str) -> None:
             "message": f"Monthly {kind} limit reached ({q['used']}/{q['limit']} on {q['plan']}). Upgrade to continue.",
         })
 
+# Error tracking — enabled only when SENTRY_DSN is set.
+if config.SENTRY_DSN:
+    try:
+        import sentry_sdk
+        sentry_sdk.init(dsn=config.SENTRY_DSN, traces_sample_rate=0.1, send_default_pii=False)
+    except Exception:
+        pass
+
 app = FastAPI(title="CMO Cofounder")
+
+# CORS: lock to ALLOWED_ORIGINS in prod; permissive "*" only when unset (local/demo).
+_origins = [o.strip() for o in config.ALLOWED_ORIGINS.split(",") if o.strip()] or ["*"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_origins,
+    allow_credentials=_origins != ["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def _security_headers(request: Request, call_next):
+    resp = await call_next(request)
+    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+    resp.headers.setdefault("X-Frame-Options", "DENY")
+    resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    resp.headers.setdefault("X-XSS-Protection", "0")
+    return resp
 
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "..", "cache")
 
@@ -108,6 +130,56 @@ async def usage_view(ctx: dict = Depends(current_context)):
     """Current-month usage vs plan limits, for the caller's workspace."""
     org_id = ctx.get("org_id")
     return {"plan": usage.plan_for(org_id) if org_id else "demo", "quotas": usage.all_quotas(org_id)}
+
+
+# --- integrations (per-org connected accounts) ----------------------------
+@app.get("/api/integrations")
+async def integrations_list(ctx: dict = Depends(current_context)):
+    return {"integrations": db.list_integrations(ctx.get("org_id"))}
+
+
+class IntegrationBody(BaseModel):
+    provider: str
+    connection_id: str | None = None
+    status: str = "connected"
+    metadata: dict = {}
+
+
+@app.post("/api/integrations")
+async def integrations_upsert(body: IntegrationBody, ctx: dict = Depends(current_context)):
+    org_id = ctx.get("org_id")
+    if not org_id:
+        raise HTTPException(status_code=400, detail="no workspace")
+    db.upsert_integration(org_id, body.provider, body.connection_id, body.status, body.metadata)
+    return {"ok": True}
+
+
+@app.delete("/api/integrations/{provider}")
+async def integrations_delete(provider: str, ctx: dict = Depends(current_context)):
+    db.delete_integration(ctx.get("org_id"), provider)
+    return {"ok": True}
+
+
+# --- account / workspace deletion (data-deletion path) --------------------
+@app.delete("/api/workspace")
+async def delete_workspace(ctx: dict = Depends(current_context)):
+    org_id, uid = ctx.get("org_id"), ctx.get("user_id")
+    if not org_id:
+        raise HTTPException(status_code=400, detail="no workspace")
+    if org_id not in db.owned_org_ids(uid):
+        raise HTTPException(status_code=403, detail="only an owner can delete the workspace")
+    db.delete_org(org_id)
+    return {"deleted": org_id}
+
+
+@app.delete("/api/account")
+async def delete_account(ctx: dict = Depends(current_context)):
+    uid = ctx.get("user_id")
+    if not uid:
+        raise HTTPException(status_code=400, detail="not authenticated")
+    for oid in db.owned_org_ids(uid):  # cascade-delete workspaces this user owns
+        db.delete_org(oid)
+    return {"deleted": db.delete_user(uid)}
 
 
 # --- Stripe billing -------------------------------------------------------

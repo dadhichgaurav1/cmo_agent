@@ -12,7 +12,13 @@ from app import config
 from app.schemas import Finding
 
 SLUGS = {"hackernews": "HACKERNEWS_SEARCH_POSTS"}
-USER_ID = "cmo-cofounder"
+# Composio entity id. Per-org connected accounts use a per-org entity; the shared default covers
+# no-auth tools (e.g. HN search) and local/demo mode.
+DEFAULT_ENTITY = "cmo-cofounder"
+
+
+def entity_for(org_id) -> str:
+    return f"org-{org_id}" if org_id else DEFAULT_ENTITY
 
 _client = None
 _ok: bool | None = None
@@ -40,11 +46,12 @@ def available() -> bool:
     return _get_client() is not None
 
 
-async def composio_search(toolkit: str, query: str, num: int = 4) -> List[Finding]:
+async def composio_search(toolkit: str, query: str, num: int = 4, entity_id: str = DEFAULT_ENTITY) -> List[Finding]:
     client = _get_client()
     slug = SLUGS.get(toolkit)
     if not client or not slug:
         return []
+    entity_id = entity_id or DEFAULT_ENTITY
     # Algolia (behind the HN toolkit) ANDs terms — retry with top keywords if a long query is empty.
     queries = [query]
     short = " ".join(query.split()[:3])
@@ -56,7 +63,7 @@ async def composio_search(toolkit: str, query: str, num: int = 4) -> List[Findin
                 return client.tools.execute(
                     slug=slug,
                     arguments={"query": qq},
-                    user_id=USER_ID,
+                    user_id=entity_id,
                     dangerously_skip_version_check=True,
                 )
             resp = await asyncio.to_thread(_call)
@@ -116,15 +123,16 @@ def discover(need: str, limit: int = 5) -> List[dict]:
     return out
 
 
-async def execute_tool(slug: str, arguments: dict, num: int = 4) -> List[Finding]:
+async def execute_tool(slug: str, arguments: dict, num: int = 4, entity_id: str = DEFAULT_ENTITY) -> List[Finding]:
     """Execute an arbitrary discovered Composio tool and coerce its output into Findings."""
     client = _get_client()
     if not client or not slug:
         return []
+    entity_id = entity_id or DEFAULT_ENTITY
     try:
         def _call():
             return client.tools.execute(
-                slug=slug, arguments=arguments or {}, user_id=USER_ID,
+                slug=slug, arguments=arguments or {}, user_id=entity_id,
                 dangerously_skip_version_check=True,
             )
         resp = await asyncio.to_thread(_call)

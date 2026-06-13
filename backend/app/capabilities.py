@@ -72,11 +72,12 @@ async def _discover_and_bind(need: str, query: str) -> Optional[Capability]:
     return cap
 
 
-async def research(access: str, query: str, num: int, emit: Callable) -> List[Finding]:
+async def research(access: str, query: str, num: int, emit: Callable, entity_id: str = "") -> List[Finding]:
     """Single entry point for a research move. Builtin access runs directly; an unknown
-    access triggers runtime discovery + binding, then executes the bound tool."""
+    access triggers runtime discovery + binding, then executes the bound tool.
+    entity_id scopes Composio execution to the org's connected accounts (when set)."""
     if access in BUILTIN_TOOLS:
-        return await tools.run_tool(access, query, num)
+        return await tools.run_tool(access, query, num, entity_id=entity_id)
 
     cap = lookup(access)
     newly_bound = False
@@ -97,7 +98,7 @@ async def research(access: str, query: str, num: int, emit: Callable) -> List[Fi
             if k in args:
                 args[k] = query
                 break
-        found = await composio_tools.execute_tool(cap.slug, args, num)
+        found = await composio_tools.execute_tool(cap.slug, args, num, entity_id=entity_id)
         if found:
             return found
 

@@ -10,7 +10,7 @@ from typing import TypedDict
 
 from langgraph.graph import START, END, StateGraph
 
-from app import capabilities, models, monitors, prompts, skills, tools
+from app import capabilities, composio_tools, db, email, models, monitors, prompts, skills, tools
 from app.memory import memory
 from app.tenancy import customer_scope
 from app.schemas import (
@@ -131,7 +131,8 @@ async def act(state: S, config) -> S:
     await emit({"type": "step", "label": f"Researching: {item.get('query', '')}", "model": access})
     # capabilities.research handles builtin sources directly and discovers+binds any
     # non-builtin source the planner asked for (Addendum 4).
-    found = await capabilities.research(access, item.get("query", ""), 4, emit)
+    found = await capabilities.research(access, item.get("query", ""), 4, emit,
+                                        entity_id=composio_tools.entity_for(state.get("org_id")))
     findings = list(state.get("findings", []))
     for f in found:
         findings.append(f.model_dump())
@@ -325,7 +326,8 @@ async def run_monitor(org_id, slug: str, job: dict, emit=None) -> dict:
     await emit({"type": "step", "label": f"Monitor: {name}", "model": "synap"})
 
     prior = await memory.recall(scope, [job.get("query", ""), name, "adjacencies", "channels"])
-    found = await capabilities.research(job.get("access", "exa"), job.get("query", ""), 4, emit)
+    found = await capabilities.research(job.get("access", "exa"), job.get("query", ""), 4, emit,
+                                        entity_id=composio_tools.entity_for(org_id))
     findings = [f.model_dump() for f in found]
 
     try:
@@ -347,6 +349,14 @@ async def run_monitor(org_id, slug: str, job: dict, emit=None) -> dict:
     delta_items += [{"text": f"[{name}] changed: {s}", "kind": "update", "run_id": rid} for s in diff.changed]
     if delta_items:
         await memory.bootstrap(scope, delta_items)
+
+    # Best-effort email alert to the workspace owner when a monitor surfaces movement.
+    if (diff.new or diff.changed) and org_id and email.enabled():
+        to = db.org_owner_email(org_id)
+        if to:
+            rows = "".join(f"<li>{s}</li>" for s in (diff.new + diff.changed)[:8])
+            await email.send(to, f"[StratCMO] {name}: {len(diff.new)} new, {len(diff.changed)} changed",
+                             f"<p>{diff.summary}</p><ul>{rows}</ul>")
 
     await emit({"type": "update", "label": f"{name}: {len(diff.new)} new, {len(diff.changed)} changed",
                 "data": entry, "model": "claude-sonnet-4-6"})
