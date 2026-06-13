@@ -159,8 +159,7 @@ class Memory:
                     CreateMemoryRequest(
                         document=it["text"],
                         document_type="document",
-                        customer_id=customer_id,
-                        user_id=USER_ID,
+                        customer_id=customer_id,   # company brain -> CUSTOMER scope (no user_id, else Synap extracts at User scope)
                         document_created_at=now,
                         metadata={"kind": it.get("kind", ""), "source_url": it.get("url", ""), "run_id": it.get("run_id", "")},
                     )
