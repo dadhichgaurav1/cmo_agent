@@ -1,4 +1,5 @@
 import type { Ev } from './types'
+import { accessToken } from './supabase'
 
 const EVENT_TYPES = [
   'step', 'memory', 'profile', 'objective', 'sources', 'plan',
@@ -6,14 +7,30 @@ const EVENT_TYPES = [
   'tool_bound', 'skill_bound', 'capabilities', 'discarded', 'monitors', 'update',
 ]
 
-export function analyze(
+// JSON headers + bearer token when signed in (no-op in demo mode).
+async function jsonHeaders(): Promise<Record<string, string>> {
+  const h: Record<string, string> = { 'Content-Type': 'application/json' }
+  const t = await accessToken()
+  if (t) h.Authorization = `Bearer ${t}`
+  return h
+}
+
+async function authedHeaders(): Promise<Record<string, string>> {
+  const t = await accessToken()
+  return t ? { Authorization: `Bearer ${t}` } : {}
+}
+
+export async function analyze(
   url: string,
   mode: string,
   onEv: (e: Ev) => void,
   onDone: () => void,
   onErr: (m: string) => void,
-): EventSource {
-  const es = new EventSource(`/api/analyze/stream?url=${encodeURIComponent(url)}&mode=${mode}`)
+): Promise<EventSource> {
+  // EventSource can't set headers, so the token rides as a query param (backend accepts both).
+  const t = await accessToken()
+  const tok = t ? `&access_token=${encodeURIComponent(t)}` : ''
+  const es = new EventSource(`/api/analyze/stream?url=${encodeURIComponent(url)}&mode=${mode}${tok}`)
   let finished = false
   for (const t of EVENT_TYPES) {
     es.addEventListener(t, (e: MessageEvent) => {
@@ -39,7 +56,7 @@ export function analyze(
 export async function chatApi(url: string, message: string) {
   const r = await fetch('/api/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await jsonHeaders(),
     body: JSON.stringify({ url, message }),
   })
   return r.json()
@@ -48,7 +65,7 @@ export async function chatApi(url: string, message: string) {
 export async function researchApi(url: string, query: string) {
   const r = await fetch('/api/research', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await jsonHeaders(),
     body: JSON.stringify({ url, query }),
   })
   return r.json()
@@ -57,7 +74,7 @@ export async function researchApi(url: string, query: string) {
 export async function uiRender(payload: any) {
   const r = await fetch('/api/ui/render', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await jsonHeaders(),
     body: JSON.stringify(payload),
   })
   return r.json()
@@ -69,17 +86,22 @@ function slugify(url: string): string {
 }
 
 export async function memoryView(url: string) {
-  const r = await fetch(`/api/memory/${slugify(url)}`)
+  const r = await fetch(`/api/memory/${slugify(url)}`, { headers: await authedHeaders() })
   return r.json()
 }
 
 export async function monitorsView(url: string) {
-  const r = await fetch(`/api/monitors/${slugify(url)}`)
+  const r = await fetch(`/api/monitors/${slugify(url)}`, { headers: await authedHeaders() })
   return r.json()
 }
 
 export async function runMonitors(url: string) {
-  const r = await fetch(`/api/monitors/${slugify(url)}/run`, { method: 'POST' })
+  const r = await fetch(`/api/monitors/${slugify(url)}/run`, { method: 'POST', headers: await authedHeaders() })
+  return r.json()
+}
+
+export async function runsView() {
+  const r = await fetch('/api/runs', { headers: await authedHeaders() })
   return r.json()
 }
 

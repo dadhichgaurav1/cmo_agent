@@ -119,7 +119,7 @@ export default function App() {
     if (running || !url.trim()) return
     setRunning(true); setTrace([]); setProfile(null); setObjective(null); setSources([]); setCompanyType('')
     setStrategic([]); setRadar([]); setArtifacts({}); setLedger([]); setCaps([]); setMonitorJobs([]); setTab('brief')
-    esRef.current = analyze(url.trim(), mode,
+    analyze(url.trim(), mode,
       (e) => {
         if (e.type === 'step' || e.type === 'memory' || e.type === 'finding' || e.type === 'reflect'
             || e.type === 'tool_bound' || e.type === 'skill_bound') setTrace((t) => [...t, e])
@@ -136,7 +136,7 @@ export default function App() {
       },
       () => setRunning(false),
       () => setRunning(false),
-    )
+    ).then((es) => { esRef.current = es })
   }
 
   function openTrace(e: Ev) {
