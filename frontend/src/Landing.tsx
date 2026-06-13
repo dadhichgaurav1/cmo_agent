@@ -16,7 +16,9 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
       <Returns />
       <Features />
       <HowItWorks onEnter={onEnter} />
+      <Founder />
       <Compare />
+      <Proof />
       <CTA onEnter={onEnter} />
       <Footer />
     </div>
@@ -292,6 +294,54 @@ function HowItWorks({ onEnter }: { onEnter: () => void }) {
       </div>
       <div className="lp-how-cta">
         <button className="lp-btn lg" onClick={onEnter}>Run your first brief →</button>
+      </div>
+    </section>
+  )
+}
+
+/**
+ * Founder demo — a 60–90s screen recording of a real run. High-trust for an
+ * unproven tool. Renders nothing until FOUNDER_VIDEO is set to an embed URL,
+ * so we never ship an empty placeholder. Fill in at launch.
+ */
+const FOUNDER_VIDEO = '' // e.g. 'https://www.loom.com/embed/<id>'
+
+function Founder() {
+  if (!FOUNDER_VIDEO) return null
+  return (
+    <section className="lp-founder">
+      <div className="lp-section-head">
+        <span className="lp-kicker">Watch a real run</span>
+        <h2>Ninety seconds, one URL, a full brief.</h2>
+      </div>
+      <div className="lp-video">
+        <iframe src={FOUNDER_VIDEO} title="StratCMO walkthrough" allowFullScreen />
+      </div>
+    </section>
+  )
+}
+
+/**
+ * Social proof. Populate TESTIMONIALS with real beta-user quotes before driving
+ * traffic — never ship invented ones. Empty array → section renders nothing.
+ */
+const TESTIMONIALS: { quote: string; name: string; role: string }[] = []
+
+function Proof() {
+  if (TESTIMONIALS.length === 0) return null
+  return (
+    <section className="lp-proof">
+      <div className="lp-section-head">
+        <span className="lp-kicker">From the founders using it</span>
+        <h2>Built with the people it's for.</h2>
+      </div>
+      <div className="lp-proof-grid">
+        {TESTIMONIALS.map((t, i) => (
+          <figure className="lp-quote" key={i}>
+            <blockquote>{t.quote}</blockquote>
+            <figcaption><b>{t.name}</b> · {t.role}</figcaption>
+          </figure>
+        ))}
       </div>
     </section>
   )
