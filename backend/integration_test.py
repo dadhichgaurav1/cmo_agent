@@ -111,15 +111,15 @@ async def main():
     check("monitors: in-process scheduler starts", sched_ok)
     jobs = [{"name": "itest watch", "query": "email api", "access": "hackernews",
              "cadence": "weekly", "rationale": "test"}]
-    monitors.save_plan("itest", jobs)
-    plan = monitors.get_plan("itest")
+    monitors.save_plan(None, "itest", jobs)            # org_id=None -> local/demo scope
+    plan = monitors.get_plan(None, "itest")
     check("monitors: plan persists + reloads", len(plan.get("jobs", [])) == 1, plan.get("updated_at", ""))
     full = await memory.recall_full("itest", ["integration"])
     check("memory: recall_full returns structured brain for Synap tab",
           isinstance(full, dict) and "facts" in full and "formatted_context" in full,
           f"active={full.get('active')} facts={len(full.get('facts', []))}")
     if RUN_LIVE:
-        entry = await graph.run_monitor("itest", jobs[0])
+        entry = await graph.run_monitor(None, "itest", jobs[0])
         check("LIVE: run_monitor diffs + writes a changelog entry",
               isinstance(entry, dict) and "summary" in entry and entry.get("monitor") == "itest watch",
               entry.get("summary", "")[:60])

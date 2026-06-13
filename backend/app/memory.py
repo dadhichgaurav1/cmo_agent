@@ -15,7 +15,9 @@ from typing import Any, Dict, List
 from app import config
 
 _LOCAL = os.getenv("LOCAL_MEMORY_PATH", "/tmp/cmo_memory.json")
-USER_ID = "founder"
+# Fallback identity for local/demo mode (no auth). When a request is authenticated the real
+# Supabase user id is threaded in and used as the USER-scope key instead.
+ANON_USER = "founder"
 
 
 def _load() -> dict:
@@ -176,23 +178,25 @@ class Memory:
         _save(data)
 
     # --- conversational ingest + retrieval (founder chat) ---
-    async def record_turn(self, conversation_id: str, role: str, content: str, customer_id: str):
+    async def record_turn(self, conversation_id: str, role: str, content: str, customer_id: str,
+                          user_id: str = ANON_USER):
         await self._ensure()
         if self.sdk:
             try:
                 await self.sdk.conversation.record_message(
                     conversation_id=conversation_id, role=role, content=content,
-                    user_id=USER_ID, customer_id=customer_id,
+                    user_id=user_id or ANON_USER, customer_id=customer_id,
                 )
             except Exception:
                 pass
 
-    async def recall_conversation(self, conversation_id: str, customer_id: str, query: str) -> str:
+    async def recall_conversation(self, conversation_id: str, customer_id: str, query: str,
+                                  user_id: str = ANON_USER) -> str:
         await self._ensure()
         if self.sdk:
             try:
                 ctx = await self.sdk.conversation.context.fetch(
-                    conversation_id=conversation_id, user_id=USER_ID, customer_id=customer_id,
+                    conversation_id=conversation_id, user_id=user_id or ANON_USER, customer_id=customer_id,
                     search_query=[query], mode="fast",
                 )
                 return getattr(ctx, "formatted_context", "") or ""
@@ -201,12 +205,12 @@ class Memory:
         return ""
 
     # --- founder preferences (USER scope, scoped to THIS customer; never cross-customer) ---
-    async def recall_user(self, customer_id: str, queries: List[str]) -> str:
+    async def recall_user(self, customer_id: str, queries: List[str], user_id: str = ANON_USER) -> str:
         await self._ensure()
         if self.sdk:
             try:
                 ctx = await self.sdk.user.context.fetch(
-                    user_id=USER_ID, customer_id=customer_id, search_query=queries, mode="accurate"
+                    user_id=user_id or ANON_USER, customer_id=customer_id, search_query=queries, mode="accurate"
                 )
                 return getattr(ctx, "formatted_context", "") or ""
             except Exception:

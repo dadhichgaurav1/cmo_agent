@@ -2,17 +2,20 @@ import asyncio
 import json
 import os
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from app import db
 from app import graph as agent_graph
 from app import models as M
 from app import monitors
 from app import tools as T
+from app.auth import current_context
 from app.memory import memory, conversation_id_for
+from app.tenancy import customer_scope
 
 app = FastAPI(title="CMO Cofounder")
 app.add_middleware(
@@ -38,42 +41,58 @@ async def health():
 
 
 @app.get("/api/memory/{slug}")
-async def memory_view(slug: str):
+async def memory_view(slug: str, ctx: dict = Depends(current_context)):
     """Addendum 5: the company's durable Synap brain, for the Memory tab."""
-    full = await memory.recall_full(slug, [slug, "objective", "adjacencies", "channels", "monitors"])
-    full["conversation_id"] = conversation_id_for(slug)
+    scope = customer_scope(ctx.get("org_id"), slug)
+    full = await memory.recall_full(scope, [slug, "objective", "adjacencies", "channels", "monitors"])
+    full["conversation_id"] = conversation_id_for(scope)
     return full
 
 
 @app.get("/api/monitors/{slug}")
-async def monitors_view(slug: str):
-    plan = monitors.get_plan(slug)
+async def monitors_view(slug: str, ctx: dict = Depends(current_context)):
+    org_id = ctx.get("org_id")
+    plan = monitors.get_plan(org_id, slug)
     return {"jobs": plan.get("jobs", []), "updated_at": plan.get("updated_at", ""),
-            "changelog": monitors.get_changelog(slug)}
+            "changelog": monitors.get_changelog(org_id, slug)}
 
 
 @app.post("/api/monitors/{slug}/run")
-async def monitors_run(slug: str):
+async def monitors_run(slug: str, ctx: dict = Depends(current_context)):
     """Manually fire every monitor now (demo-safe path); returns the deltas produced."""
-    entries = await monitors.run_now(slug)
-    return {"ran": len(entries), "entries": entries, "changelog": monitors.get_changelog(slug)}
+    org_id = ctx.get("org_id")
+    entries = await monitors.run_now(org_id, slug)
+    db.record_usage(org_id, "monitor", len(entries), {"slug": slug})
+    return {"ran": len(entries), "entries": entries, "changelog": monitors.get_changelog(org_id, slug)}
 
 
 @app.get("/api/changelog/{slug}")
-async def changelog_view(slug: str):
-    return {"changelog": monitors.get_changelog(slug)}
+async def changelog_view(slug: str, ctx: dict = Depends(current_context)):
+    return {"changelog": monitors.get_changelog(ctx.get("org_id"), slug)}
+
+
+@app.get("/api/runs")
+async def runs_view(ctx: dict = Depends(current_context)):
+    """Historical analyses for the caller's workspace (empty in local/demo mode)."""
+    return {"runs": db.list_runs(ctx.get("org_id"))}
 
 
 def _sse(ev: dict) -> str:
     return f"event: {ev.get('type', 'message')}\ndata: {json.dumps(ev)}\n\n"
 
 
-async def _drive_graph(url: str, mode: str, queue: "asyncio.Queue"):
+async def _drive_graph(url: str, mode: str, queue: "asyncio.Queue", org_id=None, user_id=None, run_id=None):
+    summary: dict = {}
+
     async def emit(ev):
+        if ev.get("type") == "done":
+            summary.update(ev.get("data", {}))
         await queue.put(ev)
     try:
-        await agent_graph.run(url, mode, emit)
+        await agent_graph.run(url, mode, emit, org_id=org_id, user_id=user_id, run_id=run_id)
+        db.finish_run(run_id, "done", summary=summary)
     except Exception as e:
+        db.finish_run(run_id, "error", error=str(e))
         await queue.put({"type": "error", "label": str(e)})
     finally:
         await queue.put(None)  # sentinel
@@ -91,15 +110,20 @@ def _cached_events(url: str):
 
 
 @app.get("/api/analyze/stream")
-async def analyze_stream(url: str, mode: str = "live"):
+async def analyze_stream(url: str, mode: str = "live", ctx: dict = Depends(current_context)):
+    org_id, user_id = ctx.get("org_id"), ctx.get("user_id")
+
     async def gen():
         if mode == "cached":
             for ev in _cached_events(url):
                 yield _sse(ev)
                 await asyncio.sleep(float(ev.get("_delay", 0.45)))
             return
+        slug = agent_graph.slugify(url)
+        run_id = db.create_run(org_id, user_id, url, slug, customer_scope(org_id, slug), mode)
+        db.record_usage(org_id, "run", 1, {"slug": slug})
         queue: asyncio.Queue = asyncio.Queue()
-        task = asyncio.create_task(_drive_graph(url, mode, queue))
+        task = asyncio.create_task(_drive_graph(url, mode, queue, org_id=org_id, user_id=user_id, run_id=run_id))
         try:
             while True:
                 ev = await queue.get()
@@ -119,16 +143,19 @@ class ChatBody(BaseModel):
 
 
 @app.post("/api/chat")
-async def chat(body: ChatBody):
+async def chat(body: ChatBody, actx: dict = Depends(current_context)):
+    org_id, user_id = actx.get("org_id"), actx.get("user_id")
     slug = agent_graph.slugify(body.url)
-    conv = conversation_id_for(slug)
-    await memory.record_turn(conv, "user", body.message, slug)              # conversational ingest
-    ctx = await memory.recall_conversation(conv, slug, body.message) or await memory.recall(slug, [body.message])
+    scope = customer_scope(org_id, slug)
+    conv = conversation_id_for(scope)
+    await memory.record_turn(conv, "user", body.message, scope, user_id=user_id)   # conversational ingest
+    ctx = await memory.recall_conversation(conv, scope, body.message, user_id=user_id) or await memory.recall(scope, [body.message])
     system = ("You are the founder's CMO cofounder copilot. Be concrete, brief, and specific to THIS company. "
               "Think adjacencies, wedges, channels and stage — never generic advice.")
     human = (f"Company context from memory:\n{ctx[:1500]}\n\n" if ctx else "") + f"Founder asks: {body.message}"
     reply, name = await M.run_text("chat", system, human, max_tokens=700)
-    await memory.record_turn(conv, "assistant", reply, slug)                # record the reply turn
+    await memory.record_turn(conv, "assistant", reply, scope, user_id=user_id)      # record the reply turn
+    db.record_usage(org_id, "chat", 1, {"slug": slug})
     return {"reply": reply, "model": name}
 
 

@@ -12,6 +12,7 @@ from langgraph.graph import START, END, StateGraph
 
 from app import capabilities, models, monitors, prompts, skills, tools
 from app.memory import memory
+from app.tenancy import customer_scope
 from app.schemas import (
     Artifact, DiffOut, MonitorPlan, ProfileObjective, PlanOut, ReflectOut,
     SourceStrategy, SynthesisOut,
@@ -25,6 +26,9 @@ class S(TypedDict, total=False):
     mode: str
     slug: str
     run_id: str
+    org_id: str       # tenant; None in local/demo mode
+    user_id: str      # founder identity for USER-scope memory
+    scope: str        # Synap customer_id = org_id:slug (or bare slug when no org)
     prior_context: str
     profile: dict
     objective: dict
@@ -67,7 +71,7 @@ def slugify(url: str) -> str:
 async def recall(state: S, config) -> S:
     emit = _emit(config)
     await emit({"type": "step", "label": "Recalling prior context (Synap)", "model": "synap"})
-    ctx = await memory.recall(state["slug"], [state["url"], "adjacencies", "positioning", "channels"])
+    ctx = await memory.recall(state["scope"], [state["url"], "adjacencies", "positioning", "channels"])
     if ctx:
         await emit({"type": "memory", "label": "Recalled prior context", "detail": ctx[:600]})
     return {"prior_context": ctx or "", "iterations": 0, "findings": [], "plan": []}
@@ -194,7 +198,8 @@ async def draft(state: S, config) -> S:
     targets = [o for o in opps if o.get("type") == "engagement"][:3] or opps[:1]
     humanizer = await skills.resolve_skill("humanizer", emit)  # always-on baseline voice skill
     # founder voice/preferences from Synap (USER scope, this company only) — drafts sound more like them over time
-    prefs = await memory.recall_user(state["slug"], ["founder voice", "tone", "writing style", "phrasing", "dos and don'ts"])
+    prefs = await memory.recall_user(state["scope"], ["founder voice", "tone", "writing style", "phrasing", "dos and don'ts"],
+                                     user_id=state.get("user_id"))
     if prefs:
         await emit({"type": "memory", "label": "Applying your voice from Synap memory", "detail": prefs[:400], "model": "synap"})
     artifacts = []
@@ -230,7 +235,7 @@ async def monitor_plan(state: S, config) -> S:
     except Exception:
         jobs = []
     if jobs:
-        monitors.save_plan(state["slug"], jobs)  # persist + register with the scheduler
+        monitors.save_plan(state.get("org_id"), state["slug"], jobs)  # persist + register with the scheduler
         await emit({"type": "monitors", "label": f"{len(jobs)} recurring monitors set",
                     "data": jobs, "model": name if jobs else "synap"})
     return {"monitors": jobs}
@@ -239,7 +244,7 @@ async def monitor_plan(state: S, config) -> S:
 async def remember(state: S, config) -> S:
     emit = _emit(config)
     await emit({"type": "step", "label": "Bootstrapping company memory (Synap)", "model": "synap"})
-    cid = state["slug"]
+    cid = state["scope"]
     rid = state.get("run_id", "")
     obj = state.get("objective", {})
     prof = state.get("profile", {})
@@ -300,23 +305,26 @@ def build_graph():
 GRAPH = build_graph()
 
 
-async def run(url: str, mode: str, emit):
-    rid = str(uuid.uuid4())[:8]
-    state = {"url": url, "mode": mode, "slug": slugify(url), "run_id": rid}
+async def run(url: str, mode: str, emit, org_id=None, user_id=None, run_id=None):
+    rid = run_id or str(uuid.uuid4())[:8]
+    slug = slugify(url)
+    state = {"url": url, "mode": mode, "slug": slug, "run_id": rid,
+             "org_id": org_id, "user_id": user_id, "scope": customer_scope(org_id, slug)}
     await GRAPH.ainvoke(state, config={"configurable": {"emit": emit, "run_id": rid}, "recursion_limit": 60})
 
 
-async def run_monitor(slug: str, job: dict, emit=None) -> dict:
+async def run_monitor(org_id, slug: str, job: dict, emit=None) -> dict:
     """Addendum 1: a lightweight recurring run. Recall prior intel, pull fresh signal for one
     monitor, diff it against what Synap already knows, and record only the delta."""
     async def _noop(_ev):
         return None
     emit = emit or _noop
+    scope = customer_scope(org_id, slug)
     rid = str(uuid.uuid4())[:8]
     name = job.get("name", "monitor")
     await emit({"type": "step", "label": f"Monitor: {name}", "model": "synap"})
 
-    prior = await memory.recall(slug, [job.get("query", ""), name, "adjacencies", "channels"])
+    prior = await memory.recall(scope, [job.get("query", ""), name, "adjacencies", "channels"])
     found = await capabilities.research(job.get("access", "exa"), job.get("query", ""), 4, emit)
     findings = [f.model_dump() for f in found]
 
@@ -332,13 +340,13 @@ async def run_monitor(slug: str, job: dict, emit=None) -> dict:
         "monitor": name, "summary": diff.summary, "new": diff.new, "changed": diff.changed,
         "at": monitors.now_iso(), "run_id": rid,
     }
-    monitors.append_changelog(slug, entry)
+    monitors.append_changelog(org_id, slug, entry)
 
     # ingest only the delta, so memory compounds instead of duplicating
     delta_items = [{"text": f"[{name}] new: {s}", "kind": "update", "run_id": rid} for s in diff.new]
     delta_items += [{"text": f"[{name}] changed: {s}", "kind": "update", "run_id": rid} for s in diff.changed]
     if delta_items:
-        await memory.bootstrap(slug, delta_items)
+        await memory.bootstrap(scope, delta_items)
 
     await emit({"type": "update", "label": f"{name}: {len(diff.new)} new, {len(diff.changed)} changed",
                 "data": entry, "model": "claude-sonnet-4-6"})

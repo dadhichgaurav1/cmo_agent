@@ -25,6 +25,17 @@ BROWSERBASE_PROJECT_ID = _get("BROWSERBASE_PROJECT_ID")
 # falls back to generating-and-caching a skill for any unknown channel at runtime.
 SKILLS_CATALOG_URL = _get("SKILLS_CATALOG_URL")
 
+# Supabase: auth (JWT verification) + Postgres-backed accounts/runs/monitors. When unset, the
+# backend runs in single-tenant local mode (no auth enforced, JSON/-tmp fallbacks) so the demo
+# path keeps working. SERVICE_ROLE_KEY bypasses RLS — never expose it to the frontend.
+# Aliases accept the variable names the Supabase dashboard generates, so .env needs no renaming.
+SUPABASE_URL = _get("SUPABASE_URL") or _get("SUPABASE_PROJECT_URL")
+SUPABASE_SERVICE_ROLE_KEY = (_get("SUPABASE_SERVICE_ROLE_KEY") or _get("SUPABASE_SERVICE_ROLE_SECRET")
+                             or _get("SUPABASE_SECRET_KEY"))
+# Legacy HS256 secret (used to verify legacy-signed tokens). New asymmetric tokens are verified
+# via JWKS from SUPABASE_URL instead — auth.py handles both.
+SUPABASE_JWT_SECRET = _get("SUPABASE_JWT_SECRET") or _get("SUPABASE_LEGACY_JWT_SECRET")
+
 
 def has(value: str) -> bool:
     return bool(value and value.strip())

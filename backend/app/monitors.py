@@ -1,16 +1,25 @@
 """Addendum 1 — store + scheduler for the agent's self-identified recurring monitors.
 
 The agent decides (in graph.monitor_plan) which signals to watch recurringly. Those jobs are
-persisted here and registered with an in-process APScheduler so they auto-execute, plus a
-manual "run now" path so the compounding story is demoable on demand. Each run writes a
-changelog entry (the delta against Synap), which the Monitors tab reads.
+persisted — to Supabase when configured, else a local JSON file — and registered with an
+in-process APScheduler so they auto-execute, plus a manual "run now" path so the compounding
+story is demoable on demand. Each run writes a changelog entry (the delta against Synap), which
+the Monitors tab reads.
 
-A `_runner` coroutine is injected by main.py at startup to avoid a graph<->monitors import cycle.
+Everything is scoped by (org_id, company_slug) so monitors never bleed across tenants. A
+`_runner` coroutine is injected by main.py at startup to avoid a graph<->monitors import cycle.
+
+NOTE: the in-process scheduler is still single-instance — it does not survive horizontal
+scaling or restarts cleanly. Moving it to a dedicated worker / external scheduler is the next
+step once the DB-backed store below is in place (the store makes that migration straightforward).
 """
 import json
 import os
 from datetime import datetime, timezone
 from typing import Awaitable, Callable, List, Optional
+
+from app import db
+from app.tenancy import customer_scope
 
 _STORE = os.getenv("MONITORS_PATH", "/tmp/cmo_monitors.json")
 _CHANGELOG = os.getenv("CHANGELOG_PATH", "/tmp/cmo_changelog.json")
@@ -18,12 +27,16 @@ _CHANGELOG = os.getenv("CHANGELOG_PATH", "/tmp/cmo_changelog.json")
 # daily | weekly | monthly -> interval seconds for APScheduler
 CADENCE_SECONDS = {"daily": 86400, "weekly": 604800, "monthly": 2592000}
 
-_runner: Optional[Callable[[str, dict], Awaitable[dict]]] = None
+_runner: Optional[Callable[[Optional[str], str, dict], Awaitable[dict]]] = None
 _scheduler = None
 
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _key(org_id: Optional[str], slug: str) -> str:
+    return customer_scope(org_id, slug)
 
 
 def _read(path: str) -> dict:
@@ -43,36 +56,55 @@ def _write(path: str, data: dict) -> None:
 
 
 # --- monitor plans ---
-def save_plan(slug: str, jobs: List[dict]) -> None:
-    data = _read(_STORE)
-    data[slug] = {"jobs": jobs, "updated_at": now_iso()}
-    _write(_STORE, data)
+def save_plan(org_id: Optional[str], slug: str, jobs: List[dict]) -> None:
+    if db.enabled() and org_id:
+        db.save_monitor(org_id, slug, jobs)
+    else:
+        data = _read(_STORE)
+        data[_key(org_id, slug)] = {"org_id": org_id, "slug": slug, "jobs": jobs, "updated_at": now_iso()}
+        _write(_STORE, data)
     if _scheduler is not None:
-        _schedule_slug(slug, jobs)
+        _schedule_slug(org_id, slug, jobs)
 
 
-def get_plan(slug: str) -> dict:
-    return _read(_STORE).get(slug, {"jobs": [], "updated_at": ""})
+def get_plan(org_id: Optional[str], slug: str) -> dict:
+    if db.enabled() and org_id:
+        row = db.get_monitor(org_id, slug)
+        return {"jobs": row.get("jobs", []), "updated_at": row.get("updated_at", "")} if row else {"jobs": [], "updated_at": ""}
+    return _read(_STORE).get(_key(org_id, slug), {"jobs": [], "updated_at": ""})
 
 
-def all_slugs() -> List[str]:
-    return list(_read(_STORE).keys())
+def all_monitors() -> List[dict]:
+    """Every stored monitor as {org_id, slug, jobs} — used to register the scheduler at startup."""
+    if db.enabled():
+        return [{"org_id": r.get("org_id"), "slug": r.get("company_slug"), "jobs": r.get("jobs", [])}
+                for r in db.all_monitors()]
+    out = []
+    for rec in _read(_STORE).values():
+        out.append({"org_id": rec.get("org_id"), "slug": rec.get("slug"), "jobs": rec.get("jobs", [])})
+    return out
 
 
 # --- changelog ---
-def append_changelog(slug: str, entry: dict) -> None:
+def append_changelog(org_id: Optional[str], slug: str, entry: dict) -> None:
+    if db.enabled() and org_id:
+        db.append_monitor_event(org_id, slug, entry)
+        return
     data = _read(_CHANGELOG)
-    data.setdefault(slug, []).insert(0, entry)  # newest first
-    data[slug] = data[slug][:50]
+    k = _key(org_id, slug)
+    data.setdefault(k, []).insert(0, entry)  # newest first
+    data[k] = data[k][:50]
     _write(_CHANGELOG, data)
 
 
-def get_changelog(slug: str) -> List[dict]:
-    return _read(_CHANGELOG).get(slug, [])
+def get_changelog(org_id: Optional[str], slug: str) -> List[dict]:
+    if db.enabled() and org_id:
+        return db.get_monitor_events(org_id, slug)
+    return _read(_CHANGELOG).get(_key(org_id, slug), [])
 
 
 # --- scheduler wiring ---
-def set_runner(fn: Callable[[str, dict], Awaitable[dict]]) -> None:
+def set_runner(fn: Callable[[Optional[str], str, dict], Awaitable[dict]]) -> None:
     global _runner
     _runner = fn
 
@@ -89,47 +121,47 @@ def start_scheduler() -> bool:
     except Exception:
         _scheduler = None
         return False
-    for slug in all_slugs():
-        _schedule_slug(slug, get_plan(slug).get("jobs", []))
+    for m in all_monitors():
+        _schedule_slug(m.get("org_id"), m.get("slug"), m.get("jobs", []))
     return True
 
 
-def _job_id(slug: str, job: dict) -> str:
-    return f"{slug}::{job.get('name', '')}"
+def _job_id(org_id: Optional[str], slug: str, job: dict) -> str:
+    return f"{_key(org_id, slug)}::{job.get('name', '')}"
 
 
-def _schedule_slug(slug: str, jobs: List[dict]) -> None:
+def _schedule_slug(org_id: Optional[str], slug: str, jobs: List[dict]) -> None:
     if _scheduler is None:
         return
     from apscheduler.triggers.interval import IntervalTrigger
     for job in jobs:
         secs = CADENCE_SECONDS.get(job.get("cadence", "weekly"), 604800)
-        jid = _job_id(slug, job)
+        jid = _job_id(org_id, slug, job)
         try:
             _scheduler.add_job(
                 _fire, IntervalTrigger(seconds=secs), id=jid, replace_existing=True,
-                args=[slug, job], misfire_grace_time=3600, coalesce=True,
+                args=[org_id, slug, job], misfire_grace_time=3600, coalesce=True,
             )
         except Exception:
             pass
 
 
-async def _fire(slug: str, job: dict) -> None:
+async def _fire(org_id: Optional[str], slug: str, job: dict) -> None:
     if _runner is not None:
         try:
-            await _runner(slug, job)
+            await _runner(org_id, slug, job)
         except Exception:
             pass
 
 
-async def run_now(slug: str) -> List[dict]:
+async def run_now(org_id: Optional[str], slug: str) -> List[dict]:
     """Manually execute every monitor for a company and return the changelog entries produced."""
     if _runner is None:
         return []
     results = []
-    for job in get_plan(slug).get("jobs", []):
+    for job in get_plan(org_id, slug).get("jobs", []):
         try:
-            entry = await _runner(slug, job)
+            entry = await _runner(org_id, slug, job)
             if entry:
                 results.append(entry)
         except Exception:
