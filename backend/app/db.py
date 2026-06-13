@@ -182,6 +182,69 @@ def count_cards(org_id: Optional[str], slug: str) -> int:
         return 0
 
 
+# --- CLI personal access tokens (long-lived, hashed) ----------------------
+def create_cli_token(org_id: str, user_id: Optional[str], token_hash: str,
+                     prefix: str, label: str) -> Optional[dict]:
+    sb = _sb()
+    if not sb or not org_id:
+        return None
+    try:
+        r = sb.table("cli_tokens").insert({
+            "org_id": org_id, "user_id": user_id, "token_hash": token_hash,
+            "prefix": prefix, "label": label,
+        }).execute()
+        rows = r.data or []
+        return rows[0] if rows else None
+    except Exception:
+        return None
+
+
+def cli_token_by_hash(token_hash: str) -> dict:
+    """Resolve a raw token's hash to its org/user — the CLI auth path. Service role only."""
+    sb = _sb()
+    if not sb or not token_hash:
+        return {}
+    try:
+        r = (sb.table("cli_tokens").select("id, org_id, user_id")
+             .eq("token_hash", token_hash).limit(1).execute())
+        rows = r.data or []
+        return rows[0] if rows else {}
+    except Exception:
+        return {}
+
+
+def touch_cli_token(token_id: str) -> None:
+    sb = _sb()
+    if not sb or not token_id:
+        return
+    try:
+        sb.table("cli_tokens").update({"last_used_at": _now()}).eq("id", token_id).execute()
+    except Exception:
+        pass
+
+
+def list_cli_tokens(org_id: Optional[str]) -> List[dict]:
+    sb = _sb()
+    if not sb or not org_id:
+        return []
+    try:
+        r = (sb.table("cli_tokens").select("id, prefix, label, last_used_at, created_at")
+             .eq("org_id", org_id).order("created_at", desc=True).execute())
+        return r.data or []
+    except Exception:
+        return []
+
+
+def delete_cli_token(org_id: Optional[str], token_id: str) -> None:
+    sb = _sb()
+    if not sb or not org_id or not token_id:
+        return
+    try:
+        sb.table("cli_tokens").delete().eq("org_id", org_id).eq("id", token_id).execute()
+    except Exception:
+        pass
+
+
 # --- monitors -------------------------------------------------------------
 def get_monitor(org_id: str, slug: str) -> dict:
     sb = _sb()

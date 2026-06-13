@@ -14,6 +14,7 @@ The token may arrive as an `Authorization: Bearer <jwt>` header OR as an `?acces
 query param — the query path exists because EventSource (used by the SSE analyze stream) cannot
 send custom headers.
 """
+import hashlib
 from typing import Optional
 
 import jwt
@@ -22,6 +23,11 @@ from fastapi import Depends, Header, HTTPException, Query
 from app import config, db
 
 ANON = {"user_id": None, "email": None}
+CLI_TOKEN_PREFIX = "scmo_"
+
+
+def hash_token(raw: str) -> str:
+    return hashlib.sha256(raw.encode()).hexdigest()
 
 _jwks_client = None
 
@@ -71,11 +77,20 @@ async def current_user(
         token = access_token.strip()
     if not token:
         raise HTTPException(status_code=401, detail="missing bearer token")
+    # Long-lived CLI personal access token (build-in-public skill). Org-scoped, hashed.
+    if token.startswith(CLI_TOKEN_PREFIX):
+        row = db.cli_token_by_hash(hash_token(token))
+        if not row:
+            raise HTTPException(status_code=401, detail="invalid CLI token")
+        db.touch_cli_token(row.get("id"))
+        return {"user_id": row.get("user_id"), "email": None, "cli_org_id": row.get("org_id")}
     claims = _decode(token)
     return {"user_id": claims.get("sub"), "email": claims.get("email")}
 
 
 async def current_context(user: dict = Depends(current_user)) -> dict:
-    """Authenticated user + their active org_id (None in local/demo mode)."""
-    org_id = db.primary_org_for(user["user_id"]) if user.get("user_id") else None
+    """Authenticated user + their active org_id (None in local/demo mode).
+    CLI tokens carry their own org directly (no membership lookup)."""
+    org_id = user.get("cli_org_id") or (
+        db.primary_org_for(user["user_id"]) if user.get("user_id") else None)
     return {**user, "org_id": org_id}

@@ -144,6 +144,12 @@ export async function generateCards(url: string, platforms?: string[], perPlatfo
   return r.json()
 }
 
+// CLI personal access token for the build-in-public skill. Raw token returned once.
+export async function createCliToken(label: string) {
+  const r = await fetch('/api/cli-tokens', { method: 'POST', headers: await jsonHeaders(), body: JSON.stringify({ label }) })
+  return r.json()
+}
+
 export async function usageView() {
   const r = await fetch('/api/usage', { headers: await authedHeaders() })
   return r.json()

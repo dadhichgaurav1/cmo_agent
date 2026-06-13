@@ -1,7 +1,45 @@
 import { useEffect, useState } from 'react'
-import { listCards, patchCard, deleteCard, generateCards } from './api'
+import { listCards, patchCard, deleteCard, generateCards, createCliToken } from './api'
 import { PLATFORMS, cardAction, classifyPlatform } from './deeplinks'
 import type { ActionCard, CardState, Opp, Artifact } from './types'
+
+// Minimal mint UI for the build-in-public CLI skill. The full Settings home is deferred;
+// the board is where CLI-pushed cards land, so set-up belongs here.
+function CliSetup({ url }: { url: string }) {
+  const [open, setOpen] = useState(false)
+  const [token, setToken] = useState('')
+  const [busy, setBusy] = useState(false)
+  const slug = (url || '').toLowerCase().replace(/^https?:\/\//, '').split('/')[0].replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+  async function mint() {
+    setBusy(true)
+    try { const r = await createCliToken('build-in-public CLI'); setToken(r.token || '') } catch { /* ignore */ }
+    setBusy(false)
+  }
+  return (
+    <div className="clisetup">
+      <button className="clitoggle" onClick={() => setOpen(!open)}>
+        {open ? '−' : '+'} Post build-in-public from your editor
+      </button>
+      {open && (
+        <div className="clibody">
+          <p className="muted">Install the StratCMO skill in Claude Code. It reads your git log locally and pushes a
+            drafted post here. Your code never leaves your machine — only the post text does.</p>
+          {!token
+            ? <button className="mini" onClick={mint} disabled={busy}>{busy ? 'minting…' : 'Generate CLI token'}</button>
+            : (
+              <div className="clitoken">
+                <div className="muted">Copy this token now — it is shown once:</div>
+                <pre className="draftbody">{token}</pre>
+                <div className="muted">Then set it up:</div>
+                <pre className="draftbody">{`export STRATCMO_TOKEN=${token}\nexport STRATCMO_SLUG=${slug}`}</pre>
+                <button className="mini" onClick={() => navigator.clipboard?.writeText(token)}>copy token</button>
+              </div>
+            )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 // Workflow columns. Platform is fixed per card (it's a Reddit reply or it isn't), so the
 // only meaningful motion is advancing a card through these states — done with a button,
@@ -196,6 +234,8 @@ export default function ActionBoard({ url, radar, artifacts }: {
           ))}
         </div>
       )}
+
+      <CliSetup url={url} />
     </div>
   )
 }

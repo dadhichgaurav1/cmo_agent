@@ -260,6 +260,37 @@ async def cards_delete(card_id: str, ctx: dict = Depends(current_context)):
     return {"ok": True}
 
 
+# --- CLI personal access tokens (for the build-in-public skill) -----------
+class CliTokenBody(BaseModel):
+    label: str = ""
+
+
+@app.get("/api/cli-tokens")
+async def cli_tokens_list(ctx: dict = Depends(current_context)):
+    return {"tokens": db.list_cli_tokens(ctx.get("org_id"))}
+
+
+@app.post("/api/cli-tokens")
+async def cli_tokens_create(body: CliTokenBody, ctx: dict = Depends(current_context)):
+    """Mint a long-lived token. The raw value is returned ONCE and never stored in plaintext."""
+    org_id, uid = ctx.get("org_id"), ctx.get("user_id")
+    if not org_id:
+        raise HTTPException(status_code=400, detail="no workspace")
+    import secrets
+    from app.auth import hash_token, CLI_TOKEN_PREFIX
+    raw = CLI_TOKEN_PREFIX + secrets.token_urlsafe(32)
+    row = db.create_cli_token(org_id, uid, hash_token(raw), raw[:12], body.label)
+    if not row:
+        raise HTTPException(status_code=500, detail="could not mint token")
+    return {"token": raw, "id": row.get("id"), "prefix": row.get("prefix"), "label": row.get("label")}
+
+
+@app.delete("/api/cli-tokens/{token_id}")
+async def cli_tokens_delete(token_id: str, ctx: dict = Depends(current_context)):
+    db.delete_cli_token(ctx.get("org_id"), token_id)
+    return {"ok": True}
+
+
 # --- account / workspace deletion (data-deletion path) --------------------
 @app.delete("/api/workspace")
 async def delete_workspace(ctx: dict = Depends(current_context)):
