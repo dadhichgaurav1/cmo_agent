@@ -142,3 +142,43 @@ export function openInTab(title: string, bodyHtml: string) {
   a{color:#c2603f}.meta{color:#8b857a;font-size:12px;margin-bottom:18px}</style></head><body>${bodyHtml}</body></html>`)
   w.document.close()
 }
+
+// Open a print-optimized document (A4, page breaks, no app chrome) and let the
+// browser's print dialog save it as a PDF. A "Save as PDF" button is offered for
+// the user to click when ready; it hides itself in the printed output.
+export function openPrintable(title: string, bodyHtml: string) {
+  const w = window.open('', '_blank')
+  if (!w) return
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    @page { size: A4; margin: 18mm 16mm; }
+    *{box-sizing:border-box}
+    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#211f1c;max-width:760px;margin:0 auto;padding:32px 28px 64px;line-height:1.6}
+    h1{font-family:'Newsreader',Georgia,serif;font-weight:500;font-size:26px;letter-spacing:-.01em;margin:0 0 2px}
+    h2{font-family:'Newsreader',Georgia,serif;font-weight:500;font-size:18px;margin:26px 0 8px;border-bottom:1px solid #e7e2d8;padding-bottom:5px;page-break-after:avoid}
+    h3{font-size:14px;margin:14px 0 3px}
+    p{margin:6px 0}
+    .meta{color:#8b857a;font-size:12px;margin-bottom:18px}
+    .doc-objective{font-size:16px;line-height:1.5;background:#faf9f5;border:1px solid #e7e2d8;border-radius:10px;padding:14px 16px;margin:8px 0}
+    .doc-why{color:#5c574e;font-size:13px;margin-top:6px}
+    .doc-not{color:#9a5436;font-size:13px;margin-top:4px}
+    .doc-item{border:1px solid #e7e2d8;border-radius:10px;padding:12px 14px;margin:8px 0;page-break-inside:avoid}
+    .doc-pri{font-weight:600;font-size:11px;letter-spacing:.04em;color:#c2603f;margin-right:6px}
+    .doc-sub{color:#8b857a;font-size:12px;margin:2px 0 6px}
+    .doc-chip{display:inline-block;font-size:11px;color:#5c574e;background:#f3f0e8;border-radius:6px;padding:2px 7px;margin:0 5px 4px 0}
+    .doc-draft{white-space:pre-wrap;word-break:break-word;background:#faf9f5;border:1px solid #e7e2d8;border-radius:8px;padding:12px;font-size:12.5px;margin-top:6px}
+    ol,ul{margin:6px 0;padding-left:20px}li{margin:3px 0}
+    a{color:#c2603f;text-decoration:none;word-break:break-all}
+    .doc-actions{position:fixed;top:14px;right:14px;display:flex;gap:8px}
+    .doc-actions button{font:inherit;font-size:13px;cursor:pointer;border:1px solid #d9d3c7;background:#211f1c;color:#faf9f5;border-radius:8px;padding:7px 14px}
+    .doc-actions button.ghost{background:#fff;color:#211f1c}
+    @media print { .doc-actions{display:none} body{padding-top:8px} }
+  </style></head><body>
+  <div class="doc-actions">
+    <button onclick="window.print()">⬇ Save as PDF</button>
+    <button class="ghost" onclick="window.close()">close</button>
+  </div>
+  ${bodyHtml}</body></html>`)
+  w.document.close()
+}

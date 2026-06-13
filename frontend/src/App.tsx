@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { analyze, chatApi, researchApi, uiRender, memoryView, monitorsView, runMonitors, openInTab, escapeHtml } from './api'
+import { analyze, chatApi, researchApi, uiRender, memoryView, monitorsView, runMonitors, openInTab, openPrintable, escapeHtml } from './api'
 import type { Ev, Profile, Objective, Source, Opp, Artifact, Discarded, Capability, MonitorJob, ChangelogEntry, MemoryView } from './types'
 
 function modelColor(m?: string) {
@@ -89,12 +89,104 @@ function RadarCard({ o, art }: { o: Opp; art?: Artifact }) {
   )
 }
 
+// Assemble the run's key sections into a clean, print-ready document and hand it
+// to the browser's print → "Save as PDF". Mirrors what the Brief tab shows.
+function downloadBriefPdf(p: {
+  url: string; objective: Objective | null; profile: Profile | null; companyType: string
+  sources: Source[]; radar: Opp[]; strategic: Opp[]; artifacts: Record<string, Artifact>
+  ledger: Discarded[]
+}) {
+  const e = escapeHtml
+  const company = p.profile?.name || p.url || 'company'
+  const today = new Date().toISOString().slice(0, 10)
+  const parts: string[] = []
+
+  parts.push(`<h1>${e(company)} — CMO brief</h1>`)
+  parts.push(`<div class="meta">StratCMO · ${e(p.url)}${p.companyType ? ' · ' + e(p.companyType) : ''} · ${today}</div>`)
+
+  if (p.objective) {
+    parts.push('<h2>Objective</h2>')
+    parts.push(`<div class="doc-objective">${e(p.objective.objective)}`)
+    if (p.objective.reasoning) parts.push(`<div class="doc-why">${e(p.objective.reasoning)}</div>`)
+    if (p.objective.not_this) parts.push(`<div class="doc-not">Not: ${e(p.objective.not_this)}</div>`)
+    parts.push('</div>')
+  }
+
+  if (p.profile) {
+    parts.push('<h2>Company</h2>')
+    parts.push(`<p><b>${e(p.profile.name)}</b> — ${e(p.profile.one_liner)}</p>`)
+    parts.push(`<div class="doc-sub">${e(p.profile.category || '')}${p.profile.icp ? ' · ICP: ' + e(p.profile.icp) : ''}</div>`)
+    if (p.profile.competitors?.length) parts.push(`<div class="doc-sub">vs ${e(p.profile.competitors.join(', '))}</div>`)
+  }
+
+  if (p.sources.length) {
+    parts.push(`<h2>Where your customers are${p.companyType ? ' <span class="doc-sub">' + e(p.companyType) + '</span>' : ''}</h2>`)
+    for (const s of p.sources) {
+      parts.push(`<div class="doc-item"><b>${e(s.name)}</b> <span class="doc-chip">${e(s.access)}</span>`)
+      if (s.why) parts.push(`<div class="doc-why">${e(s.why)}</div>`)
+      parts.push('</div>')
+    }
+  }
+
+  if (p.radar.length) {
+    parts.push('<h2>Engagement radar</h2>')
+    for (const o of p.radar) {
+      const art = p.artifacts[o.id]
+      parts.push('<div class="doc-item">')
+      parts.push(`<h3>${e(o.title)}</h3>`)
+      if (o.why) parts.push(`<p class="doc-why">${e(o.why)}</p>`)
+      if (o.source_name) parts.push(`<span class="doc-chip">${e(o.source_name)}</span>`)
+      if (o.thread_url) parts.push(`<div><a href="${e(o.thread_url)}">${e(o.thread_url)}</a></div>`)
+      if (art) {
+        parts.push(`<div class="doc-sub">Drafted reply · ${e(art.model_used || '')}</div>`)
+        parts.push(`<div class="doc-draft">${e(art.body)}</div>`)
+      }
+      parts.push('</div>')
+    }
+  }
+
+  if (p.strategic.length) {
+    parts.push('<h2>Prioritized moves</h2>')
+    for (const pr of PRIORITIES) {
+      const list = p.strategic.filter((o) => (o.priority || 'P1').toUpperCase().startsWith(pr))
+      for (const o of list) {
+        parts.push('<div class="doc-item">')
+        parts.push(`<h3><span class="doc-pri">${e(o.priority || 'P1')}</span>${e(o.title)}</h3>`)
+        parts.push(`<div class="doc-sub">${e(o.category || '')} · impact ${e(o.impact || '')} · effort ${e(o.effort || '')}</div>`)
+        if (o.why) parts.push(`<p>${e(o.why)}</p>`)
+        if (o.steps?.length) parts.push(`<ol>${o.steps.map((s) => `<li>${e(s)}</li>`).join('')}</ol>`)
+        if (o.sources?.length) parts.push(`<div class="doc-sub">${o.sources.map((s, i) => `<a href="${e(s)}">source ${i + 1}</a>`).join(' · ')}</div>`)
+        parts.push('</div>')
+      }
+    }
+  }
+
+  if (p.ledger?.length) {
+    parts.push('<h2>Reasoning log <span class="doc-sub">ideas considered and discarded</span></h2>')
+    for (const st of ['plan', 'reflect', 'synthesize']) {
+      const items = p.ledger.filter((d) => d.stage === st)
+      if (!items.length) continue
+      parts.push(`<h3>Ruled out at ${e(st)}</h3>`)
+      for (const d of items) {
+        parts.push('<div class="doc-item">')
+        parts.push(`<div><b>${e(d.idea)}</b></div>`)
+        if (d.reason) parts.push(`<div class="doc-why">${e(d.reason)}</div>`)
+        parts.push('</div>')
+      }
+    }
+  }
+
+  openPrintable(`${company} — CMO brief`, parts.join('\n'))
+}
+
+// Primary = what you act on; secondary = transparency/"behind the scenes" views,
+// rendered muted and to the right of a divider. ids are unchanged (tab routing).
 const TABS = [
-  { id: 'brief', label: 'Brief' },
-  { id: 'synap', label: 'Synap Memory' },
-  { id: 'monitors', label: 'Monitors' },
-  { id: 'reasoning', label: 'Reasoning log' },
-  { id: 'capabilities', label: 'Capabilities' },
+  { id: 'brief', label: 'Brief', tier: 'primary' },
+  { id: 'reasoning', label: 'Reasoning', tier: 'primary' },
+  { id: 'monitors', label: 'Monitors', tier: 'primary' },
+  { id: 'synap', label: 'Memory', tier: 'secondary' },
+  { id: 'capabilities', label: 'Toolkit', tier: 'secondary' },
 ]
 
 export default function App() {
@@ -174,18 +266,30 @@ export default function App() {
 
       {started && (
         <nav className="tabs">
-          {TABS.map((t) => (
-            <button key={t.id} className={'tab' + (tab === t.id ? ' on' : '')} onClick={() => setTab(t.id)}>
-              {t.label}
-              {t.id === 'reasoning' && ledger.length > 0 && <span className="tabcount">{ledger.length}</span>}
-              {t.id === 'monitors' && monitorJobs.length > 0 && <span className="tabcount">{monitorJobs.length}</span>}
-            </button>
-          ))}
+          <div className="tabgroup">
+            {TABS.filter((t) => t.tier === 'primary').map((t) => (
+              <button key={t.id} className={'tab' + (tab === t.id ? ' on' : '')} onClick={() => setTab(t.id)}>
+                {t.label}
+                {t.id === 'monitors' && monitorJobs.length > 0 && <span className="tabcount">{monitorJobs.length}</span>}
+                {t.id === 'reasoning' && ledger.length > 0 && <span className="tabcount">{ledger.length}</span>}
+              </button>
+            ))}
+          </div>
+          <span className="tabdivider" aria-hidden="true" />
+          <div className="tabgroup secondary">
+            {TABS.filter((t) => t.tier === 'secondary').map((t) => (
+              <button key={t.id} className={'tab' + (tab === t.id ? ' on' : '')} onClick={() => setTab(t.id)}>
+                {t.label}
+                {t.id === 'monitors' && monitorJobs.length > 0 && <span className="tabcount">{monitorJobs.length}</span>}
+                {t.id === 'reasoning' && ledger.length > 0 && <span className="tabcount">{ledger.length}</span>}
+              </button>
+            ))}
+          </div>
         </nav>
       )}
 
       {started && tab === 'brief' && (
-        <BriefTab {...{ objective, profile, companyType, sources, radar, strategic, artifacts, trace, running, openTrace, url }} />
+        <BriefTab {...{ objective, profile, companyType, sources, radar, strategic, artifacts, ledger, trace, running, openTrace, url }} />
       )}
       {tab === 'synap' && <SynapTab url={url} />}
       {tab === 'monitors' && <MonitorsTab url={url} jobs={monitorJobs} />}
@@ -233,9 +337,17 @@ function ProfileBar({ profile }: { profile: Profile }) {
   )
 }
 
-function BriefTab({ objective, profile, companyType, sources, radar, strategic, artifacts, trace, running, openTrace, url }: any) {
+function BriefTab({ objective, profile, companyType, sources, radar, strategic, artifacts, ledger, trace, running, openTrace, url }: any) {
+  const hasBrief = !running && (objective || sources.length || radar.length || strategic.length)
   return (
     <>
+      {hasBrief && (
+        <div className="briefactions">
+          <button className="mini" onClick={() => downloadBriefPdf({ url, objective, profile, companyType, sources, radar, strategic, artifacts, ledger })}>
+            ⬇ Save brief as PDF
+          </button>
+        </div>
+      )}
       {objective && <ObjectiveBanner objective={objective} profile={profile} />}
       <div className="grid">
         <aside className="rail">
