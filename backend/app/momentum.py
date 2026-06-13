@@ -212,8 +212,9 @@ def _award(org_id, user_id, card, kind, tz, now) -> Optional[dict]:
         )
         streak = new_streak_fields["current_streak"]
 
-        mult = streak_multiplier(streak)
-        if streak > 1:
+        mult = 1.0
+        if streak > 1:  # only apply (and show) a streak bonus once there's a real streak
+            mult *= streak_multiplier(streak)
             breakdown.append(f"x{streak_multiplier(streak):.2f} streak ({streak} days)")
         # variety: shipping on a platform not yet shipped *today*
         todays = db.list_events(org_id, slug, since=today.isoformat())
