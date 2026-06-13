@@ -326,7 +326,7 @@ export default function App() {
         <BriefTab {...{ objective, profile, companyType, sources, radar, strategic, artifacts, ledger, trace, running, openTrace, url }} />
       )}
       {started && tab === 'actions' && <ActionBoard url={url} radar={radar} artifacts={artifacts} onMomentum={onMomentum} />}
-      {started && tab === 'momentum' && <Momentum url={url} m={momentum} />}
+      {started && tab === 'momentum' && <Momentum url={url} m={momentum} companyType={companyType} />}
       {tab === 'synap' && <SynapTab url={url} />}
       {tab === 'monitors' && <MonitorsTab url={url} jobs={monitorJobs} />}
       {tab === 'reasoning' && <ReasoningTab ledger={ledger} />}
