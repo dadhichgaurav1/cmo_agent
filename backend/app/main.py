@@ -7,6 +7,24 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+
+class SPAStaticFiles(StaticFiles):
+    """Serve the built SPA, falling back to index.html for unknown paths so
+    client-side routes (e.g. /app) survive deep links and refreshes instead of
+    404ing. /api/* paths are left to FastAPI's own 404."""
+
+    async def get_response(self, path: str, scope):
+        try:
+            response = await super().get_response(path, scope)
+        except StarletteHTTPException as exc:
+            if exc.status_code == 404 and not path.startswith("api"):
+                return await super().get_response("index.html", scope)
+            raise
+        if response.status_code == 404 and not path.startswith("api"):
+            return await super().get_response("index.html", scope)
+        return response
 
 from app import billing
 from app import config
@@ -391,4 +409,4 @@ async def ui_render(body: UIBody, request: Request, ctx: dict = Depends(current_
 # Serve the built frontend if present (single-container deploy)
 _static = os.path.join(os.path.dirname(__file__), "..", "static")
 if os.path.isdir(_static):
-    app.mount("/", StaticFiles(directory=_static, html=True), name="static")
+    app.mount("/", SPAStaticFiles(directory=_static, html=True), name="static")
