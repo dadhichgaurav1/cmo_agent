@@ -55,7 +55,8 @@ def create_checkout(org_id: str, email: Optional[str], success_url: str, cancel_
         line_items=[{"price": config.STRIPE_PRICE_PRO, "quantity": 1}],
         success_url=success_url,
         cancel_url=cancel_url,
-        allow_promotion_codes=True,
+        allow_promotion_codes=True,             # founding-member ($39) + launch codes
+        subscription_data={"trial_period_days": 14},  # 14-day Pro trial ('trialing' maps to pro)
     )
     return sess.url
 

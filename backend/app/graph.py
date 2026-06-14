@@ -10,7 +10,7 @@ from typing import TypedDict
 
 from langgraph.graph import START, END, StateGraph
 
-from app import capabilities, composio_tools, db, email, models, monitors, prompts, skills, tools
+from app import capabilities, composio_tools, db, email, models, monitors, prompts, safety, skills, tools
 from app.memory import memory
 from app.tenancy import customer_scope
 from app.schemas import (
@@ -451,7 +451,8 @@ async def generate_cards(org_id, slug: str, platforms=None, per_platform: int = 
                     "run_id": run.get("id"), "company_slug": slug, "source": "agent", "platform": platform,
                     "kind": "reply", "target_url": url, "target_title": f.title, "title": f.title,
                     "body": body, "voice": voice.name if voice else "", "state": "drafted",
-                    "metadata": {"why": (f.snippet or "")[:240], "query": query},
+                    "metadata": {"why": (f.snippet or "")[:240], "query": query,
+                                 "review": safety.review_draft(body, platform)},
                 })
                 made += 1
         await emit({"type": "step", "label": f"{platform}: {made} cards drafted", "model": "claude-haiku-4-5"})
@@ -464,11 +465,14 @@ async def feed_all_cards() -> int:
     """Daily feeder entry point: generate fresh cards for every company that opted in via the
     Action Board toggle (db.all_feeders). The scheduler calls this once a day. Per-company, not
     a global switch. Returns the number of cards created."""
+    from app import usage
     total = 0
     for f in db.all_feeders():
         org_id, slug = f.get("org_id"), f.get("slug")
         if not slug:
             continue
+        if not usage.can(org_id, "monitors_active"):
+            continue  # free orgs can arm the feeder, but the daily sweep only fires for Pro
         try:
             total += len(await generate_cards(org_id, slug))
         except Exception:

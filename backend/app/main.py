@@ -61,10 +61,21 @@ def _enforce(ctx: dict, request: Request, kind: str) -> None:
         raise HTTPException(status_code=429, detail="Too many requests — slow down a moment.")
     q = usage.quota(org_id, kind)
     if not q["allowed"]:
+        per = q.get("period", "month")
         raise HTTPException(status_code=429, detail={
             "error": "quota_exceeded", "kind": kind, "used": q["used"],
-            "limit": q["limit"], "plan": q["plan"],
-            "message": f"Monthly {kind} limit reached ({q['used']}/{q['limit']} on {q['plan']}). Upgrade to continue.",
+            "limit": q["limit"], "plan": q["plan"], "period": per,
+            "message": (f"You've hit the {q['plan']} {kind} limit ({q['used']}/{q['limit']} per {per}). "
+                        "Upgrade to Pro to keep going."),
+        })
+
+
+def _require(ctx: dict, feature: str, message: str) -> None:
+    """Capability gate (402 = upsell). No-op in demo mode, where every capability is on."""
+    if not usage.can(ctx.get("org_id"), feature):
+        raise HTTPException(status_code=402, detail={
+            "error": "upgrade_required", "feature": feature, "plan": usage.plan_for(ctx.get("org_id")),
+            "message": message,
         })
 
 # Error tracking — enabled only when SENTRY_DSN is set.
@@ -132,7 +143,10 @@ async def monitors_view(slug: str, ctx: dict = Depends(current_context)):
 
 @app.post("/api/monitors/{slug}/run")
 async def monitors_run(slug: str, ctx: dict = Depends(current_context)):
-    """Manually fire every monitor now (demo-safe path); returns the deltas produced."""
+    """Manually fire every monitor now; returns the deltas produced. Firing is a Pro capability —
+    free workspaces can create + preview monitors, but the engine only runs on Pro."""
+    _require(ctx, "monitors_active",
+             "Monitors run on Pro. Upgrade to let the agent watch your signals and refill your board.")
     org_id = ctx.get("org_id")
     entries = await monitors.run_now(org_id, slug)
     db.record_usage(org_id, "monitor", len(entries), {"slug": slug})
@@ -152,9 +166,8 @@ async def runs_view(ctx: dict = Depends(current_context)):
 
 @app.get("/api/usage")
 async def usage_view(ctx: dict = Depends(current_context)):
-    """Current-month usage vs plan limits, for the caller's workspace."""
-    org_id = ctx.get("org_id")
-    return {"plan": usage.plan_for(org_id) if org_id else "demo", "quotas": usage.all_quotas(org_id)}
+    """Per-window usage vs plan limits + capability flags, for the caller's workspace."""
+    return usage.entitlements(ctx.get("org_id"))
 
 
 # --- integrations (per-org connected accounts) ----------------------------
@@ -213,7 +226,10 @@ async def cards_feeder(body: FeederBody, ctx: dict = Depends(current_context)):
     if not org_id:
         raise HTTPException(status_code=400, detail="no workspace")
     db.set_card_feeder(org_id, body.slug, body.enabled)
-    return {"enabled": body.enabled}
+    # Free can arm the toggle (and preview the value), but the daily sweep only fires for Pro.
+    active = usage.can(org_id, "monitors_active")
+    return {"enabled": body.enabled, "active": active,
+            "note": None if active else "Auto-refill is armed. Upgrade to Pro to fire it daily."}
 
 
 @app.post("/api/cards")
@@ -469,6 +485,14 @@ def _cached_events(url: str):
 async def analyze_stream(request: Request, url: str, mode: str = "live", ctx: dict = Depends(current_context)):
     org_id, user_id = ctx.get("org_id"), ctx.get("user_id")
     if mode != "cached":
+        # companies_max: a new company beyond the plan cap needs Pro (re-running an existing one is fine).
+        cap = usage.company_limit(org_id)
+        if cap is not None and agent_graph.slugify(url) not in db.company_slugs(org_id) \
+                and len(db.company_slugs(org_id)) >= cap:
+            raise HTTPException(status_code=402, detail={
+                "error": "upgrade_required", "feature": "companies_max", "plan": usage.plan_for(org_id),
+                "message": f"Free covers {cap} company. Upgrade to Pro to run StratCMO across all your products.",
+            })
         _enforce(ctx, request, "run")  # cached demo runs are free
 
     async def gen():
@@ -502,6 +526,9 @@ class ChatBody(BaseModel):
 
 @app.post("/api/chat")
 async def chat(body: ChatBody, request: Request, actx: dict = Depends(current_context)):
+    # Chat advises (single-step) on every plan. When agentic chat lands — turns that kick off a run,
+    # research, or autonomous multi-step work — gate that branch with _require(actx, "agent_actions", ...)
+    # so it consumes the engine only on Pro; plain Q&A and one-shot drafting stay free.
     _enforce(actx, request, "chat")
     org_id, user_id = actx.get("org_id"), actx.get("user_id")
     slug = agent_graph.slugify(body.url)

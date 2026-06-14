@@ -94,6 +94,18 @@ def list_runs(org_id: str, limit: int = 50) -> List[dict]:
         return []
 
 
+def company_slugs(org_id: Optional[str]) -> List[str]:
+    """Distinct companies this org has ever analyzed — the unit the companies_max cap counts."""
+    sb = _sb()
+    if not sb or not org_id:
+        return []
+    try:
+        r = sb.table("runs").select("company_slug").eq("org_id", org_id).execute()
+        return sorted({x.get("company_slug") for x in (r.data or []) if x.get("company_slug")})
+    except Exception:
+        return []
+
+
 def latest_run(org_id: Optional[str], slug: str) -> dict:
     """The most recent completed run for a company — used to seed the Action Board."""
     sb = _sb()

@@ -181,6 +181,9 @@ def _schedule_slug(org_id: Optional[str], slug: str, jobs: List[dict]) -> None:
 
 
 async def _fire(org_id: Optional[str], slug: str, job: dict) -> None:
+    from app import usage
+    if not usage.can(org_id, "monitors_active"):
+        return  # scheduled monitors only fire on Pro (free can create them; they stay dormant)
     if _runner is not None:
         try:
             await _runner(org_id, slug, job)
