@@ -132,6 +132,14 @@ function CardView({ card, onChange, onDismiss }: {
       {!act.prefills && card.body && bucket !== 'posted' && (
         <div className="swimhint">copy · open · paste — you press send</div>
       )}
+      {card.body && card.metadata?.review && (card.metadata.review.flags?.length || card.metadata.review.note) && (
+        <div className={'swimreview ' + (card.metadata.review.level || 'ok')}>
+          {card.metadata.review.flags?.length > 0 && (
+            <ul>{card.metadata.review.flags.map((f: string, i: number) => <li key={i}>{f}</li>)}</ul>
+          )}
+          <div className="swimreview-note">{card.metadata.review.note}</div>
+        </div>
+      )}
     </div>
   )
 }

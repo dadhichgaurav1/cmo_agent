@@ -6,6 +6,8 @@ thread_url) become cards — strategic "moves" stay on the Brief as moves, not p
 """
 from typing import List, Optional
 
+from app import safety
+
 PLATFORMS = ["reddit", "hackernews", "x", "linkedin", "indiehackers", "other"]
 
 
@@ -51,6 +53,7 @@ def cards_from_summary(slug: str, run_id: Optional[str], summary: dict) -> List[
             "title": o.get("title", ""),
             "body": body,
             "state": "drafted" if body else "suggested",
-            "metadata": {"why": o.get("why", ""), "opportunity_id": o.get("id", "")},
+            "metadata": {"why": o.get("why", ""), "opportunity_id": o.get("id", ""),
+                         **({"review": safety.review_draft(body, platform)} if body else {})},
         })
     return cards
