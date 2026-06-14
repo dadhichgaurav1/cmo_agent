@@ -401,7 +401,7 @@ function CTA({ onEnter }: { onEnter: () => void }) {
   )
 }
 
-function Footer() {
+export function Footer() {
   return (
     <footer className="lp-footer">
       <div className="lp-footer-brand">
@@ -409,10 +409,10 @@ function Footer() {
         <span className="lp-footer-by">by Maximem</span>
       </div>
       <nav className="lp-footer-links">
-        <a href="#features">What it does</a>
-        <a href="#how">How it works</a>
+        <a href="/pricing">Pricing</a>
         <a href="/terms">Terms</a>
         <a href="/privacy">Privacy</a>
+        <a href="mailto:gaurav@maximem.ai">Support</a>
       </nav>
       <div className="lp-footer-copy">© {2026} Maximem. All rights reserved.</div>
     </footer>

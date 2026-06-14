@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import { AuthGate } from './Auth'
 import { Landing } from './Landing'
+import { Privacy, Terms } from './Legal'
+import { Pricing } from './Pricing'
 import './styles.css'
 
 // Error tracking — loaded only when VITE_SENTRY_DSN is set (keeps the bundle lean otherwise).
@@ -34,6 +36,9 @@ function Root() {
   if (path === '/' || path === '') {
     return <Landing onEnter={() => navigate('/app')} />
   }
+  if (path === '/pricing') return <Pricing />
+  if (path === '/privacy') return <Privacy />
+  if (path === '/terms') return <Terms />
   return (
     <AuthGate>
       <App />
