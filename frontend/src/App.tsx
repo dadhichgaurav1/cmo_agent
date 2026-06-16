@@ -199,6 +199,7 @@ export default function App() {
   const [url, setUrl] = useState('resend.com')
   const [mode, setMode] = useState<'cached' | 'live'>('cached')
   const [running, setRunning] = useState(false)
+  const [showProgress, setShowProgress] = useState(false)
   const [tab, setTab] = useState('brief')
   const [trace, setTrace] = useState<Ev[]>([])
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -216,6 +217,7 @@ export default function App() {
   const [toast, setToast] = useState<MomentumAward | null>(null)
   const [levelUp, setLevelUp] = useState<MomentumAward['leveled_up'] | null>(null)
   const esRef = useRef<EventSource | null>(null)
+  const runStartRef = useRef<number>(0)
   const toastTimer = useRef<number | null>(null)
 
   // Capture the founder's timezone once (streak day-bucketing depends on it), then load momentum.
@@ -246,10 +248,12 @@ export default function App() {
   function run() {
     if (running || !url.trim()) return
     track('run_started', { mode })
+    runStartRef.current = Date.now(); setShowProgress(true)
     setRunning(true); setTrace([]); setProfile(null); setObjective(null); setSources([]); setCompanyType('')
     setStrategic([]); setRadar([]); setArtifacts({}); setLedger([]); setCaps([]); setMonitorJobs([]); setTab('brief')
     analyze(url.trim(), mode,
       (e) => {
+        e._t = Date.now()
         if (e.type === 'step' || e.type === 'memory' || e.type === 'finding' || e.type === 'reflect'
             || e.type === 'tool_bound' || e.type === 'skill_bound') setTrace((t) => [...t, e])
         else if (e.type === 'profile') setProfile(e.data)
@@ -276,6 +280,7 @@ export default function App() {
   }
 
   const started = trace.length > 0 || profile || objective
+  const showApp = started && !showProgress
 
   return (
     <div className="app">
@@ -284,7 +289,7 @@ export default function App() {
           <div className="wordmark"><span className="mark">◆</span> StratCMO</div>
           <div className="sub">market intelligence that acts like a cofounder, not a tracker</div>
         </div>
-        {started && momentum && <MomentumChip m={momentum} onClick={() => setTab('momentum')} unreadEdge={!!edge && edge.state === 'unread'} />}
+        {showApp && momentum && <MomentumChip m={momentum} onClick={() => setTab('momentum')} unreadEdge={!!edge && edge.state === 'unread'} />}
         <div className="controls">
           <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="company url e.g. resend.com" onKeyDown={(e) => e.key === 'Enter' && run()} />
           <div className="toggle">
@@ -295,14 +300,21 @@ export default function App() {
         </div>
       </header>
 
-      {!started && (
+      {!started && !showProgress && (
         <div className="empty">
           <h1>Point it at a company. Get a CMO cofounder's read.</h1>
           <p>Stage-right objective · where your customers actually are · non-obvious wedges · specific threads to engage, with drafts.</p>
         </div>
       )}
 
-      {started && (
+      {showProgress && (
+        <RunProgress trace={trace} running={running} company={profile?.name || url}
+          startedAt={runStartRef.current}
+          hasResults={!!(objective || sources.length || radar.length || strategic.length)}
+          onViewBrief={() => setShowProgress(false)} />
+      )}
+
+      {showApp && (
         <nav className="tabs">
           <div className="tabgroup">
             {TABS.filter((t) => t.tier === 'primary').map((t) => (
@@ -326,11 +338,11 @@ export default function App() {
         </nav>
       )}
 
-      {started && tab === 'brief' && (
+      {showApp && tab === 'brief' && (
         <BriefTab {...{ objective, profile, companyType, sources, radar, strategic, artifacts, ledger, trace, running, openTrace, url }} />
       )}
-      {started && tab === 'actions' && <ActionBoard url={url} radar={radar} artifacts={artifacts} onMomentum={onMomentum} />}
-      {started && tab === 'momentum' && (
+      {showApp && tab === 'actions' && <ActionBoard url={url} radar={radar} artifacts={artifacts} onMomentum={onMomentum} />}
+      {showApp && tab === 'momentum' && (
         <Momentum url={url} m={momentum} companyType={companyType} edge={edge}
           onMomentum={onMomentum} onGoToBoard={() => setTab('actions')}
           onEdgeRead={() => setEdge((e) => e ? { ...e, state: 'read' } : e)} />
@@ -410,6 +422,136 @@ function ProfileBar({ profile }: { profile: Profile }) {
         </div>
       )}
     </div>
+  )
+}
+
+// ── Run progress: centre-stage pipeline while the agent works ───────────────
+// The backend tags each 'step' event with a canonical phase id; we light these
+// up queued → running → done and reveal the Brief on completion (Manicule-style).
+const PHASES: { id: string; label: string; desc: string }[] = [
+  { id: 'recall',     label: 'Recall prior context',      desc: 'Pull what we already know about this company from memory.' },
+  { id: 'objective',  label: 'Read the site, set the objective', desc: 'Infer the stage and the single objective worth owning.' },
+  { id: 'sources',    label: 'Map the customer channels',  desc: 'Rank where your buyers actually gather.' },
+  { id: 'plan',       label: 'Plan the research',          desc: 'Decide what to dig into across the chosen sources.' },
+  { id: 'research',   label: 'Research the sources',       desc: 'Pull live signal and real threads from each channel.' },
+  { id: 'reflect',    label: 'Critique the findings',      desc: 'Check it is specific and non-obvious, not filler.' },
+  { id: 'synthesize', label: 'Synthesize moves + radar',   desc: 'Rank the moves and build the engagement radar.' },
+  { id: 'draft',      label: 'Draft the replies',          desc: 'Write the on-voice reply for each thread worth joining.' },
+]
+
+type PhaseView = { id: string; label: string; desc: string; status: 'queued' | 'running' | 'done'; detail?: string }
+
+// Cached/demo runs predate the backend `phase` tag, so fall back to matching the step label.
+const LABEL_TO_PHASE: [string, string][] = [
+  ['Recalling prior context', 'recall'],
+  ['Reading your site', 'objective'],
+  ['Mapping where your customers', 'sources'],
+  ['Planning research', 'plan'],
+  ['Researching:', 'research'],
+  ['Critiquing:', 'reflect'],
+  ['Synthesizing', 'synthesize'],
+  ['Drafting:', 'draft'],
+]
+function phaseOf(s: Ev): string {
+  if (s.phase) return s.phase
+  const label = s.label || ''
+  for (const [m, id] of LABEL_TO_PHASE) if (label.startsWith(m)) return id
+  return ''
+}
+
+function derivePhases(trace: Ev[], running: boolean): PhaseView[] {
+  const seen: Record<string, boolean> = {}
+  const lastLabel: Record<string, string> = {}
+  let currentIdx = -1
+  for (const s of trace) {
+    if (s.type !== 'step') continue
+    const pid = phaseOf(s)
+    if (!pid) continue
+    seen[pid] = true
+    lastLabel[pid] = s.label || ''
+    const idx = PHASES.findIndex((p) => p.id === pid)
+    if (idx > currentIdx) currentIdx = idx
+  }
+  return PHASES.map((p, i) => {
+    let status: PhaseView['status'] = 'queued'
+    if (!running) status = 'done'
+    else if (i < currentIdx) status = 'done'
+    else if (i === currentIdx) status = 'running'
+    else status = seen[p.id] ? 'done' : 'queued'
+    // While a phase runs, surface its live dynamic label (e.g. "Researching: <query>").
+    const detail = status === 'running' && lastLabel[p.id] && lastLabel[p.id] !== p.label ? lastLabel[p.id] : undefined
+    return { ...p, status, detail }
+  })
+}
+
+function fmtElapsed(ms: number): string {
+  const s = Math.max(0, Math.floor(ms / 1000))
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+}
+function lastEventTime(trace: Ev[]): number {
+  for (let i = trace.length - 1; i >= 0; i--) if (trace[i]._t) return trace[i]._t as number
+  return 0
+}
+
+function RunProgress({ trace, running, company, startedAt, hasResults, onViewBrief }: {
+  trace: Ev[]; running: boolean; company: string; startedAt: number; hasResults: boolean; onViewBrief: () => void
+}) {
+  const [now, setNow] = useState(Date.now())
+  useEffect(() => {
+    if (!running) return
+    const id = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(id)
+  }, [running])
+
+  const phases = derivePhases(trace, running)
+  const current = phases.find((p) => p.status === 'running')
+  const findings = trace.filter((e) => e.type === 'finding').length
+  const drafts = trace.filter((e) => e.type === 'artifact').length
+  const elapsed = (running ? now : (lastEventTime(trace) || now)) - (startedAt || now)
+
+  return (
+    <section className="runprogress">
+      <div className="rp-head">
+        <span className={'rp-status' + (running ? ' live' : ' done')}>
+          {running ? <span className="spin" /> : '✓'} {running ? 'Analysis in progress' : 'Analysis complete'}
+        </span>
+        <span className="rp-meta">{company} · {fmtElapsed(elapsed)}</span>
+      </div>
+
+      {running ? (
+        <div className="rp-hero">
+          <div className="rp-kicker">Current step</div>
+          <h1>{current ? current.label : 'Getting started…'}</h1>
+          <p>{current?.detail || current?.desc || 'Resolving the company and its public surface.'}</p>
+        </div>
+      ) : (
+        <div className="rp-hero done">
+          <div className="rp-kicker">Done</div>
+          <h1>{hasResults ? 'Your brief is ready.' : 'Run finished.'}</h1>
+          <p>{hasResults
+            ? 'Objective, channels, a ranked plan, and drafted replies, all checked against the evidence.'
+            : 'No results came back this time. Try again, or point it at a different company.'}</p>
+          {hasResults && <button className="run lg" onClick={onViewBrief}>View brief →</button>}
+        </div>
+      )}
+
+      <ol className="rp-steps">
+        {phases.map((p) => (
+          <li key={p.id} className={'rp-step ' + p.status}>
+            <span className="rp-ico">{p.status === 'done' ? '✓' : p.status === 'running' ? <span className="spin" /> : '○'}</span>
+            <div className="rp-body">
+              <div className="rp-label">{p.label}</div>
+              <div className="rp-desc">{p.detail || p.desc}</div>
+            </div>
+            <span className="rp-badge">
+              {p.status === 'done' ? 'DONE' : p.status === 'running' ? 'RUNNING' : 'QUEUED'}
+              {p.id === 'research' && findings > 0 && p.status !== 'queued' ? ` · ${findings} found` : ''}
+              {p.id === 'draft' && drafts > 0 && p.status !== 'queued' ? ` · ${drafts} drafts` : ''}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </section>
   )
 }
 

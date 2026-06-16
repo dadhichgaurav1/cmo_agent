@@ -4,6 +4,8 @@ export type Ev = {
   data?: any
   model?: string
   detail?: string
+  phase?: string   // canonical pipeline phase id, set on 'step' events (see RunProgress)
+  _t?: number      // client receive timestamp (ms), stamped on arrival for phase timings
 }
 
 export type Profile = {

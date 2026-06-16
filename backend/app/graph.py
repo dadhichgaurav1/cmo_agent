@@ -79,7 +79,7 @@ def slugify(url: str) -> str:
 
 async def recall(state: S, config) -> S:
     emit = _emit(config)
-    await emit({"type": "step", "label": "Recalling prior context (Synap)", "model": "synap"})
+    await emit({"type": "step", "phase": "recall", "label": "Recalling prior context (Synap)", "model": "synap"})
     ctx = await memory.recall(state["scope"], [state["url"], "adjacencies", "positioning", "channels"])
     if ctx:
         await emit({"type": "memory", "label": "Recalled prior context", "detail": ctx[:600]})
@@ -88,7 +88,7 @@ async def recall(state: S, config) -> S:
 
 async def objective(state: S, config) -> S:
     emit = _emit(config)
-    await emit({"type": "step", "label": "Reading your site → inferring stage & objective", "model": "claude-sonnet-4-6"})
+    await emit({"type": "step", "phase": "objective", "label": "Reading your site → inferring stage & objective", "model": "claude-sonnet-4-6"})
     site = await tools.fetch_site(state["url"])
     out, name = await models.run_structured(
         "objective", prompts.OBJECTIVE_SYS,
@@ -105,7 +105,7 @@ async def objective(state: S, config) -> S:
 
 async def source_strategy(state: S, config) -> S:
     emit = _emit(config)
-    await emit({"type": "step", "label": "Mapping where your customers actually are", "model": "claude-sonnet-4-6"})
+    await emit({"type": "step", "phase": "sources", "label": "Mapping where your customers actually are", "model": "claude-sonnet-4-6"})
     out, name = await models.run_structured(
         "source_strategy", prompts.SOURCES_SYS,
         prompts.sources_human(state["profile"], state["objective"]), SourceStrategy,
@@ -118,7 +118,7 @@ async def source_strategy(state: S, config) -> S:
 
 async def plan(state: S, config) -> S:
     emit = _emit(config)
-    await emit({"type": "step", "label": "Planning research over the chosen sources", "model": "claude-sonnet-4-6"})
+    await emit({"type": "step", "phase": "plan", "label": "Planning research over the chosen sources", "model": "claude-sonnet-4-6"})
     out, name = await models.run_structured(
         "plan", prompts.PLAN_SYS,
         prompts.plan_human(state["profile"], state["objective"], state["sources"]), PlanOut,
@@ -137,7 +137,7 @@ async def act(state: S, config) -> S:
         return {"iterations": i}
     item = plan_items[i]
     access = item.get("access", "exa")
-    await emit({"type": "step", "label": f"Researching: {item.get('query', '')}", "model": access})
+    await emit({"type": "step", "phase": "research", "label": f"Researching: {item.get('query', '')}", "model": access})
     # capabilities.research handles builtin sources directly and discovers+binds any
     # non-builtin source the planner asked for (Addendum 4).
     found = await capabilities.research(access, item.get("query", ""), 4, emit,
@@ -151,7 +151,7 @@ async def act(state: S, config) -> S:
 
 async def reflect(state: S, config) -> S:
     emit = _emit(config)
-    await emit({"type": "step", "label": "Critiquing: specific & non-obvious?", "model": "claude-sonnet-4-6"})
+    await emit({"type": "step", "phase": "reflect", "label": "Critiquing: specific & non-obvious?", "model": "claude-sonnet-4-6"})
     out, name = await models.run_structured(
         "reflect", prompts.REFLECT_SYS,
         prompts.reflect_human(state["objective"], state.get("findings", [])), ReflectOut,
@@ -179,7 +179,7 @@ def route_after_reflect(state: S) -> str:
 
 async def synthesize(state: S, config) -> S:
     emit = _emit(config)
-    await emit({"type": "step", "label": "Synthesizing prioritized moves + engagement radar", "model": "claude-sonnet-4-6"})
+    await emit({"type": "step", "phase": "synthesize", "label": "Synthesizing prioritized moves + engagement radar", "model": "claude-sonnet-4-6"})
     human = prompts.synth_human(state["profile"], state["objective"], state["sources"], state.get("findings", []))
     out, name = await models.run_structured("synthesize", prompts.SYNTH_SYS, human, SynthesisOut,
                                             temperature=0.4, max_tokens=8000)
@@ -214,7 +214,7 @@ async def draft(state: S, config) -> S:
         await emit({"type": "memory", "label": "Applying your voice from Synap memory", "detail": prefs[:400], "model": "synap"})
     artifacts = []
     for o in targets:
-        await emit({"type": "step", "label": f"Drafting: {o.get('title', '')[:50]}", "model": "claude-haiku-4-5"})
+        await emit({"type": "step", "phase": "draft", "label": f"Drafting: {o.get('title', '')[:50]}", "model": "claude-haiku-4-5"})
         # bind the platform-specific writing skill for this channel (generated at runtime if unknown)
         channel_skill = await skills.resolve_skill(o.get("template_id") or o.get("source_name") or "outreach", emit)
         sys_aug = prompts.DRAFT_SYS + skills.render([humanizer, channel_skill])
