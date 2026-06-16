@@ -25,9 +25,10 @@ create table if not exists public.lessons (
 );
 create index if not exists lessons_org_day on public.lessons (org_id, company_slug, day_key desc);
 
-create trigger trg_lessons_updated before update on public.lessons
+create or replace trigger trg_lessons_updated before update on public.lessons
   for each row execute function public.set_updated_at();
 
 alter table public.lessons enable row level security;
+drop policy if exists lessons_member_rw on public.lessons;
 create policy lessons_member_rw on public.lessons
   for all using (public.is_org_member(org_id)) with check (public.is_org_member(org_id));
