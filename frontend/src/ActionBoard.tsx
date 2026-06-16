@@ -160,15 +160,21 @@ export default function ActionBoard({ url, radar, artifacts, onMomentum }: {
   async function load() {
     setBusy(true)
     try {
-      const r = await listCards(url)
-      const got: ActionCard[] = r.cards || []
-      setFeederOn(!!r.feeder)
+      // Never let a hung/slow request brick the board: if busy stays true the refresh + generate
+      // buttons are disabled forever. Race the fetch against a timeout, and always release busy.
+      const r: any = await Promise.race([
+        listCards(url),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('cards timeout')), 8000)),
+      ])
+      const got: ActionCard[] = r?.cards || []
+      setFeederOn(!!r?.feeder)
       if (got.length) { setCards(got); setServerBacked(true) }
       else { setCards(deriveLocalCards(radar, artifacts)); setServerBacked(false) }
     } catch {
       setCards(deriveLocalCards(radar, artifacts)); setServerBacked(false)
+    } finally {
+      setBusy(false)
     }
-    setBusy(false)
   }
 
   async function toggleFeeder() {
@@ -238,7 +244,7 @@ export default function ActionBoard({ url, radar, artifacts, onMomentum }: {
 
       {!visible.length && (
         <div className="muted empty-inline">
-          No cards yet. Run an analysis, its engagement opportunities and drafts land here as cards.
+          No cards yet. Hit ✨ Generate cards to pull fresh threads worth posting in, or run an analysis to seed the board.
         </div>
       )}
 
