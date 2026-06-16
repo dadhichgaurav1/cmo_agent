@@ -20,7 +20,7 @@ export default function MomentumChip({ m, onClick, unreadEdge }: {
   if (!m) return null
   const lit = m.shipped_today
   const flameTitle = lit
-    ? `Streak safe for today — ${m.current_streak}-day streak`
+    ? `Streak safe for today, ${m.current_streak}-day streak`
     : 'Ship one thing to keep your streak'
   return (
     <button className="momentumchip" onClick={onClick} title="Your momentum">

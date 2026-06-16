@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { listCards, patchCard, deleteCard, generateCards, createCliToken, setFeeder } from './api'
+import { track } from './analytics'
 import { PLATFORMS, cardAction, classifyPlatform } from './deeplinks'
 import type { ActionCard, CardState, Opp, Artifact } from './types'
 
@@ -12,7 +13,7 @@ function CliSetup({ url }: { url: string }) {
   const slug = (url || '').toLowerCase().replace(/^https?:\/\//, '').split('/')[0].replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
   async function mint() {
     setBusy(true)
-    try { const r = await createCliToken('build-in-public CLI'); setToken(r.token || '') } catch { /* ignore */ }
+    try { const r = await createCliToken('build-in-public CLI'); setToken(r.token || ''); if (r.token) track('cli_token_minted') } catch { /* ignore */ }
     setBusy(false)
   }
   return (
@@ -23,12 +24,12 @@ function CliSetup({ url }: { url: string }) {
       {open && (
         <div className="clibody">
           <p className="muted">Install the StratCMO skill in Claude Code. It reads your git log locally and pushes a
-            drafted post here. Your code never leaves your machine — only the post text does.</p>
+            drafted post here. Your code never leaves your machine, only the post text does.</p>
           {!token
             ? <button className="mini" onClick={mint} disabled={busy}>{busy ? 'minting…' : 'Generate CLI token'}</button>
             : (
               <div className="clitoken">
-                <div className="muted">Copy this token now — it is shown once:</div>
+                <div className="muted">Copy this token now, it is shown once:</div>
                 <pre className="draftbody">{token}</pre>
                 <div className="muted">Then set it up:</div>
                 <pre className="draftbody">{`export STRATCMO_TOKEN=${token}\nexport STRATCMO_SLUG=${slug}`}</pre>
@@ -87,6 +88,7 @@ function CardView({ card, onChange, onDismiss }: {
 
   function copy() {
     navigator.clipboard?.writeText(card.body)
+    track('draft_copied', { platform: card.platform })
     setCopied(true); setTimeout(() => setCopied(false), 1200)
   }
   function open() {
@@ -115,7 +117,7 @@ function CardView({ card, onChange, onDismiss }: {
       ) : card.body ? (
         <pre className="swimbody" onClick={() => setEditing(true)} title="click to edit">{card.body}</pre>
       ) : (
-        <div className="swimnodraft">No draft yet — generate or write one.</div>
+        <div className="swimnodraft">No draft yet. Generate or write one.</div>
       )}
 
       <div className="swimactions">
@@ -130,7 +132,7 @@ function CardView({ card, onChange, onDismiss }: {
         {!card.body && !editing && <button className="ghost" onClick={() => setEditing(true)}>write</button>}
       </div>
       {!act.prefills && card.body && bucket !== 'posted' && (
-        <div className="swimhint">copy · open · paste — you press send</div>
+        <div className="swimhint">copy · open · paste, you press send</div>
       )}
       {card.body && card.metadata?.review && (card.metadata.review.flags?.length || card.metadata.review.note) && (
         <div className={'swimreview ' + (card.metadata.review.level || 'ok')}>
@@ -171,6 +173,7 @@ export default function ActionBoard({ url, radar, artifacts, onMomentum }: {
 
   async function toggleFeeder() {
     const next = !feeder
+    track('feeder_toggled', { on: next })
     setFeederOn(next)  // optimistic
     try { await setFeeder(url, next) } catch { setFeederOn(!next) }
   }
@@ -179,6 +182,7 @@ export default function ActionBoard({ url, radar, artifacts, onMomentum }: {
     setGenerating(true); setNote('')
     try {
       const r = await generateCards(url)
+      track('cards_generated', { count: r.created || 0 })
       if (r.created > 0) { await load(); setNote(`${r.created} fresh ${r.created === 1 ? 'card' : 'cards'} drafted`) }
       else setNote('No new threads found this round. Try again later, or run an analysis first.')
     } catch { setNote('Could not generate cards.') }
@@ -215,7 +219,7 @@ export default function ActionBoard({ url, radar, artifacts, onMomentum }: {
     <div className="tabpanel">
       <div className="panelhead">
         <div>
-          <h2>Action Board <span className="muted">specific places to post — drafted, ready to ship</span></h2>
+          <h2>Action Board <span className="muted">specific places to post, drafted and ready to ship</span></h2>
           <p className="panellede">One swimlane per platform. Copy the draft, open the thread, paste, and you press send.
             StratCMO drafts and queues; it never posts for you.</p>
         </div>
@@ -234,7 +238,7 @@ export default function ActionBoard({ url, radar, artifacts, onMomentum }: {
 
       {!visible.length && (
         <div className="muted empty-inline">
-          No cards yet. Run an analysis — its engagement opportunities and drafts land here as cards.
+          No cards yet. Run an analysis, its engagement opportunities and drafts land here as cards.
         </div>
       )}
 

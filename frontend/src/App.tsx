@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { analyze, chatApi, researchApi, uiRender, landingSpec, landingPrompt, memoryView, monitorsView, runMonitors, openInTab, openPrintable, escapeHtml, getMomentum, setOrgTimezone, getEdge } from './api'
+import { track } from './analytics'
 import ActionBoard from './ActionBoard'
 import Momentum from './Momentum'
 import MomentumChip, { PERSONA_GLYPH } from './MomentumChip'
@@ -104,7 +105,7 @@ function downloadBriefPdf(p: {
   const today = new Date().toISOString().slice(0, 10)
   const parts: string[] = []
 
-  parts.push(`<h1>${e(company)} — CMO brief</h1>`)
+  parts.push(`<h1>${e(company)}: CMO brief</h1>`)
   parts.push(`<div class="meta">StratCMO · ${e(p.url)}${p.companyType ? ' · ' + e(p.companyType) : ''} · ${today}</div>`)
 
   if (p.objective) {
@@ -117,7 +118,7 @@ function downloadBriefPdf(p: {
 
   if (p.profile) {
     parts.push('<h2>Company</h2>')
-    parts.push(`<p><b>${e(p.profile.name)}</b> — ${e(p.profile.one_liner)}</p>`)
+    parts.push(`<p><b>${e(p.profile.name)}</b>, ${e(p.profile.one_liner)}</p>`)
     parts.push(`<div class="doc-sub">${e(p.profile.category || '')}${p.profile.icp ? ' · ICP: ' + e(p.profile.icp) : ''}</div>`)
     if (p.profile.competitors?.length) parts.push(`<div class="doc-sub">vs ${e(p.profile.competitors.join(', '))}</div>`)
   }
@@ -179,7 +180,7 @@ function downloadBriefPdf(p: {
     }
   }
 
-  openPrintable(`${company} — CMO brief`, parts.join('\n'))
+  openPrintable(`${company}: CMO brief`, parts.join('\n'))
 }
 
 // Primary = what you act on; secondary = transparency/"behind the scenes" views,
@@ -244,6 +245,7 @@ export default function App() {
 
   function run() {
     if (running || !url.trim()) return
+    track('run_started', { mode })
     setRunning(true); setTrace([]); setProfile(null); setObjective(null); setSources([]); setCompanyType('')
     setStrategic([]); setRadar([]); setArtifacts({}); setLedger([]); setCaps([]); setMonitorJobs([]); setTab('brief')
     analyze(url.trim(), mode,
@@ -304,7 +306,7 @@ export default function App() {
         <nav className="tabs">
           <div className="tabgroup">
             {TABS.filter((t) => t.tier === 'primary').map((t) => (
-              <button key={t.id} className={'tab' + (tab === t.id ? ' on' : '')} onClick={() => setTab(t.id)}>
+              <button key={t.id} className={'tab' + (tab === t.id ? ' on' : '')} onClick={() => { track('tab_viewed', { tab: t.id }); setTab(t.id) }}>
                 {t.label}
                 {t.id === 'monitors' && monitorJobs.length > 0 && <span className="tabcount">{monitorJobs.length}</span>}
                 {t.id === 'reasoning' && ledger.length > 0 && <span className="tabcount">{ledger.length}</span>}
@@ -314,7 +316,7 @@ export default function App() {
           <span className="tabdivider" aria-hidden="true" />
           <div className="tabgroup secondary">
             {TABS.filter((t) => t.tier === 'secondary').map((t) => (
-              <button key={t.id} className={'tab' + (tab === t.id ? ' on' : '')} onClick={() => setTab(t.id)}>
+              <button key={t.id} className={'tab' + (tab === t.id ? ' on' : '')} onClick={() => { track('tab_viewed', { tab: t.id }); setTab(t.id) }}>
                 {t.label}
                 {t.id === 'monitors' && monitorJobs.length > 0 && <span className="tabcount">{monitorJobs.length}</span>}
                 {t.id === 'reasoning' && ledger.length > 0 && <span className="tabcount">{ledger.length}</span>}
@@ -342,7 +344,7 @@ export default function App() {
         <div className="toast" onClick={() => setToast(null)}>
           <div className="toast-head">✦ {toast.awarded > 0 ? `+${toast.awarded}` : ''} {toastTitle(toast)}</div>
           <div className="toast-breakdown">{toast.breakdown.join(' · ')}</div>
-          {toast.streak_safe && <div className="toast-streak">🔥 streak safe for today — {toast.current_streak} days</div>}
+          {toast.streak_safe && <div className="toast-streak">🔥 streak safe for today, {toast.current_streak} days</div>}
         </div>
       )}
 
@@ -363,10 +365,10 @@ export default function App() {
 
 function toastTitle(a: MomentumAward): string {
   if (a.kind === 'card_posted') {
-    if (a.breakdown.some((b) => b.includes('first time'))) return 'Shipped — first time on a new platform. That took guts.'
+    if (a.breakdown.some((b) => b.includes('first time'))) return 'Shipped. First time on a new platform. That took guts.'
     return 'Shipped. You hit send.'
   }
-  if (a.kind === 'card_engaged') return 'Someone engaged — that’s real traction.'
+  if (a.kind === 'card_engaged') return 'Someone engaged. That’s real traction.'
   if (a.kind === 'card_approved') return 'Draft approved.'
   if (a.kind === 'card_reviewed') return 'Draft sharpened.'
   if (a.kind === 'lesson_read') return 'Edge read.'
@@ -398,7 +400,7 @@ function ProfileBar({ profile }: { profile: Profile }) {
   return (
     <div className="profilebar">
       <div className="profrow" onClick={() => setOpen(!open)}>
-        <span><b>{profile.name}</b> — {profile.one_liner}</span>
+        <span><b>{profile.name}</b>, {profile.one_liner}</span>
         <span className="chev">{open ? '−' : '+'}</span>
       </div>
       {open && (
@@ -417,7 +419,7 @@ function BriefTab({ objective, profile, companyType, sources, radar, strategic, 
     <>
       {hasBrief && (
         <div className="briefactions">
-          <button className="mini" onClick={() => downloadBriefPdf({ url, objective, profile, companyType, sources, radar, strategic, artifacts, ledger })}>
+          <button className="mini" onClick={() => { track('brief_exported', { format: 'pdf' }); downloadBriefPdf({ url, objective, profile, companyType, sources, radar, strategic, artifacts, ledger }) }}>
             ⬇ Save brief as PDF
           </button>
         </div>
@@ -454,7 +456,7 @@ function BriefTab({ objective, profile, companyType, sources, radar, strategic, 
 
           {radar.length > 0 && (
             <section className="card">
-              <h3>Engagement radar <span className="muted">specific places to show up — with drafts</span></h3>
+              <h3>Engagement radar <span className="muted">specific places to show up, with drafts</span></h3>
               {radar.map((o: Opp) => <RadarCard key={o.id} o={o} art={artifacts[o.id]} />)}
             </section>
           )}
@@ -797,6 +799,7 @@ function ChatDock({ url }: { url: string }) {
   const [research, setResearch] = useState(false)
   async function send() {
     const m = inp.trim(); if (!m || busy) return
+    track('chat_message_sent', { mode: research ? 'research' : 'advice' })
     setInp(''); setMsgs((x) => [...x, { role: 'user', text: m }]); setBusy(true)
     try {
       const r = research ? await researchApi(url, m) : await chatApi(url, m)
@@ -814,7 +817,7 @@ function ChatDock({ url }: { url: string }) {
           <div key={i} className={'msg ' + m.role}><div className="msgtext">{m.text}</div>{m.model && <Badge model={m.model} />}</div>
         ))}
         {busy && <div className="msg assistant"><div className="msgtext muted">thinking…</div></div>}
-        {!msgs.length && <div className="muted">ask anything — or flip to research mode to trigger a fresh web pull.</div>}
+        {!msgs.length && <div className="muted">ask anything, or flip to research mode to trigger a fresh web pull.</div>}
       </div>
       <div className="chatinput">
         <input value={inp} onChange={(e) => setInp(e.target.value)} placeholder={research ? 'research a question live…' : 'ask your CMO cofounder…'} onKeyDown={(e) => e.key === 'Enter' && send()} />

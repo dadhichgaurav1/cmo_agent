@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react'
 import { Footer } from './Landing'
 import { usageView, startCheckout, openBillingPortal } from './api'
+import { track, register, setOrg } from './analytics'
 
 const FREE = [
   '1 company',
   '1 strategic run / week (+3 to start)',
-  '10 agent chats / day — advice & drafts',
+  '10 agent chats / day, advice & drafts',
   'Action Board, momentum, streaks & the Daily Edge',
   'Create monitors & preview what they’d catch',
 ]
 
 const PRO = [
-  'Everything in Free, plus —',
-  'Monitors fire daily — auto-refill your board with fresh threads',
+  'Everything in Free, plus:',
+  'Monitors fire daily, auto-refilling your board with fresh threads',
   'Unlimited re-runs, manual or automated (fair use)',
   'Agent chat that acts, not just advises',
   'Run StratCMO across all your products',
@@ -23,15 +24,21 @@ export function Pricing() {
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    usageView().then((u) => setPlan(u?.plan || '')).catch(() => {})
+    track('pricing_viewed')
+    usageView().then((u) => {
+      setPlan(u?.plan || '')
+      if (u?.plan) register({ plan: u.plan })
+      if (u?.org_id) setOrg(u.org_id, { plan: u.plan })
+    }).catch(() => {})
   }, [])
 
   const isPro = plan === 'pro'
 
   async function onCta() {
     if (busy) return
-    if (!plan) { window.location.href = '/app'; return } // not signed in → start free
+    if (!plan) { track('cta_clicked', { location: 'pricing_start_free' }); window.location.href = '/app'; return } // not signed in → start free
     setBusy(true)
+    track(isPro ? 'portal_opened' : 'checkout_started', { source: 'pricing' })
     try {
       const r = isPro ? await openBillingPortal() : await startCheckout()
       if (r?.detail && !r?.url) alert(typeof r.detail === 'string' ? r.detail : 'Billing is not available right now.')
@@ -56,7 +63,7 @@ export function Pricing() {
       <main className="pricing">
         <h1>Simple pricing</h1>
         <p className="pricing-sub">
-          Free is the cold start and the manual loop. Pro is the engine that keeps your board full —
+          Free is the cold start and the manual loop. Pro is the engine that keeps your board full:
           monitors that wake up daily and refill it with fresh places to post.
         </p>
 

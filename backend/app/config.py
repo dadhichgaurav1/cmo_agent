@@ -57,6 +57,11 @@ ALLOWED_ORIGINS = _get("ALLOWED_ORIGINS")
 RESEND_API_KEY = _get("RESEND_API_KEY")
 RESEND_FROM = _get("RESEND_FROM") or "StratCMO <noreply@stratcmo.app>"
 
+# Product analytics (PostHog). Optional — unset = disabled, no events sent. POSTHOG_API_KEY is the
+# project write key (same value the frontend uses as VITE_POSTHOG_KEY); HOST is the region host.
+POSTHOG_API_KEY = _get("POSTHOG_API_KEY")
+POSTHOG_HOST = _get("POSTHOG_HOST") or "https://us.i.posthog.com"
+
 # NOTE: the Action Board daily feeder is controlled per-company (a toggle on the board,
 # stored on the monitors row), not by a global env flag — see db.all_feeders / set_card_feeder.
 

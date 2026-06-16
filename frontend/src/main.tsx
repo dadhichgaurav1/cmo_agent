@@ -5,6 +5,7 @@ import { AuthGate } from './Auth'
 import { Landing } from './Landing'
 import { Privacy, Terms } from './Legal'
 import { Pricing } from './Pricing'
+import { initAnalytics, pageview } from './analytics'
 import './styles.css'
 
 // Error tracking — loaded only when VITE_SENTRY_DSN is set (keeps the bundle lean otherwise).
@@ -12,6 +13,9 @@ const _dsn = (import.meta as any).env?.VITE_SENTRY_DSN
 if (_dsn) {
   import('@sentry/react').then((S) => S.init({ dsn: _dsn, tracesSampleRate: 0.1 })).catch(() => {})
 }
+
+// Product analytics — no-op unless VITE_POSTHOG_KEY is set (analytics.ts handles the guard).
+initAnalytics()
 
 /**
  * Tiny path-based router (no dependency). "/" serves the public Landing page; any other path
@@ -26,6 +30,9 @@ function Root() {
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
   }, [])
+
+  // Capture a pageview on first render and on every client-side route change.
+  useEffect(() => { pageview() }, [path])
 
   function navigate(to: string) {
     if (to !== window.location.pathname) window.history.pushState({}, '', to)

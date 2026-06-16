@@ -136,5 +136,5 @@ def all_quotas(org_id) -> dict:
 def entitlements(org_id) -> dict:
     """Full plan view for the frontend: plan + quotas + capability flags."""
     plan = plan_for(org_id) if org_id else "demo"
-    return {"plan": plan, "quotas": all_quotas(org_id),
+    return {"plan": plan, "org_id": org_id, "quotas": all_quotas(org_id),
             "features": features(plan) if org_id else PLANS["pro"]["features"]}

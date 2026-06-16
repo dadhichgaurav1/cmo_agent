@@ -35,6 +35,7 @@ from app import landing as landing_mod
 from app import lessons as lessons_mod
 from app import models as M
 from app import momentum
+from app import analytics
 from app import monitors
 from app import prompts
 from app import ratelimit
@@ -62,6 +63,9 @@ def _enforce(ctx: dict, request: Request, kind: str) -> None:
     q = usage.quota(org_id, kind)
     if not q["allowed"]:
         per = q.get("period", "month")
+        analytics.track(ctx.get("user_id"), "quota_blocked",
+                        {"gate": "quota", "kind": kind, "used": q["used"], "limit": q["limit"],
+                         "plan": q["plan"], "period": per}, org_id=org_id)
         raise HTTPException(status_code=429, detail={
             "error": "quota_exceeded", "kind": kind, "used": q["used"],
             "limit": q["limit"], "plan": q["plan"], "period": per,
@@ -73,6 +77,9 @@ def _enforce(ctx: dict, request: Request, kind: str) -> None:
 def _require(ctx: dict, feature: str, message: str) -> None:
     """Capability gate (402 = upsell). No-op in demo mode, where every capability is on."""
     if not usage.can(ctx.get("org_id"), feature):
+        analytics.track(ctx.get("user_id"), "quota_blocked",
+                        {"gate": "capability", "feature": feature,
+                         "plan": usage.plan_for(ctx.get("org_id"))}, org_id=ctx.get("org_id"))
         raise HTTPException(status_code=402, detail={
             "error": "upgrade_required", "feature": feature, "plan": usage.plan_for(ctx.get("org_id")),
             "message": message,
@@ -278,6 +285,10 @@ async def cards_patch(card_id: str, body: ActionCardPatch, ctx: dict = Depends(c
     kind = momentum.classify_transition(prev, patch)
     award = momentum.award(org_id, ctx.get("user_id"), updated, kind,
                            db.org_timezone(org_id)) if kind else None
+    if kind:
+        analytics.track(ctx.get("user_id"), kind,
+                        {"platform": updated.get("platform"), "card_id": card_id,
+                         "state": updated.get("state")}, org_id=org_id)
     if kind == "card_posted":
         # If this card was a Daily Edge's CTA, mark it applied + award the lesson_applied bonus.
         lessons_mod.award_applied_for_card(org_id, ctx.get("user_id"), updated, db.org_timezone(org_id))
@@ -349,6 +360,9 @@ async def edge_read(lesson_id: str, ctx: dict = Depends(current_context)):
     award = momentum.award(org_id, ctx.get("user_id"),
                            {"company_slug": (lesson or {}).get("company_slug") or ""},
                            "lesson_read", db.org_timezone(org_id))
+    analytics.track(ctx.get("user_id"), "lesson_read",
+                    {"lesson_id": lesson_id, "principle": (lesson or {}).get("principle_key")},
+                    org_id=org_id)
     resp = {"lesson": lesson}
     if award:
         resp["momentum"] = award
@@ -463,8 +477,16 @@ async def _drive_graph(url: str, mode: str, queue: "asyncio.Queue", org_id=None,
     try:
         await agent_graph.run(url, mode, emit, org_id=org_id, user_id=user_id, run_id=run_id)
         db.finish_run(run_id, "done", summary=summary)
+        props = {"mode": mode, "slug": agent_graph.slugify(url), "run_id": run_id}
+        for k, v in (summary or {}).items():
+            if isinstance(v, (int, float, str, bool)):
+                props[k] = v
+            elif isinstance(v, list):
+                props[f"n_{k}"] = len(v)
+        analytics.track(user_id, "run_completed", props, org_id=org_id)
     except Exception as e:
         db.finish_run(run_id, "error", error=str(e))
+        analytics.track(user_id, "run_failed", {"mode": mode, "error": str(e)[:200]}, org_id=org_id)
         await queue.put({"type": "error", "label": str(e)})
     finally:
         await queue.put(None)  # sentinel
@@ -489,6 +511,9 @@ async def analyze_stream(request: Request, url: str, mode: str = "live", ctx: di
         cap = usage.company_limit(org_id)
         if cap is not None and agent_graph.slugify(url) not in db.company_slugs(org_id) \
                 and len(db.company_slugs(org_id)) >= cap:
+            analytics.track(user_id, "quota_blocked",
+                            {"gate": "capability", "feature": "companies_max", "plan": usage.plan_for(org_id)},
+                            org_id=org_id)
             raise HTTPException(status_code=402, detail={
                 "error": "upgrade_required", "feature": "companies_max", "plan": usage.plan_for(org_id),
                 "message": f"Free covers {cap} company. Upgrade to Pro to run StratCMO across all your products.",

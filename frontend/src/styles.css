@@ -437,6 +437,16 @@ body {
 .lp-footer-links a { font-size: 13.5px; color: var(--ink-2); text-decoration: none; }
 .lp-footer-links a:hover { color: var(--ink); }
 .lp-footer-copy { font-size: 12.5px; color: var(--ink-3); }
+.maximem-link { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.maximem-link:hover { color: var(--accent-deep); }
+
+/* Homepage pricing peek: reuses the .plan / .pricing-grid cards from the /pricing page. */
+.lp-plans { max-width: 920px; margin: 0 auto; padding: 56px 24px; border-top: 1px solid var(--line); }
+.lp-plans .lp-section-head { max-width: none; text-align: center; margin: 0 auto 32px; }
+.lp-plans .pricing-grid { max-width: 760px; margin: 0 auto; }
+.lp-plans-foot { text-align: center; margin-top: 24px; font-size: 14px; }
+.lp-plans-foot a { color: var(--accent-deep); text-decoration: none; font-weight: 600; }
+.lp-plans-foot a:hover { text-decoration: underline; }
 
 /* ── Action Board ─────────────────────────────────────────────────── */
 .tabpanel .panelhead .mini { font-family: var(--sans); background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-3); font-size: 12px; padding: 6px 13px; border-radius: 8px; cursor: pointer; transition: all 0.12s; }

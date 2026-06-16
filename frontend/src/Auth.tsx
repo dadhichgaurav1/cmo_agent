@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase, authEnabled } from './supabase'
 import { usageView, startCheckout, openBillingPortal } from './api'
+import { identify, resetAnalytics, register, setOrg, track } from './analytics'
 
 /**
  * Wraps the app in a Supabase auth gate. In demo mode (no VITE_SUPABASE_* configured) it renders
@@ -17,8 +18,13 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
       setLoading(false)
+      if (data.session?.user) identify(data.session.user.id, { email: data.session.user.email })
     })
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      setSession(s)
+      if (event === 'SIGNED_IN' && s?.user) identify(s.user.id, { email: s.user.email })
+      if (event === 'SIGNED_OUT') resetAnalytics()
+    })
     return () => sub.subscription.unsubscribe()
   }, [])
 
@@ -38,14 +44,20 @@ function AccountBar({ email }: { email?: string }) {
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    usageView().then((u) => setPlan(u?.plan || '')).catch(() => {})
+    usageView().then((u) => {
+      setPlan(u?.plan || '')
+      if (u?.plan) register({ plan: u.plan })
+      if (u?.org_id) setOrg(u.org_id, { plan: u.plan })
+    }).catch(() => {})
   }, [])
 
   async function upgrade() {
     if (busy) return
     setBusy(true)
+    const isPro = plan === 'pro'
+    track(isPro ? 'portal_opened' : 'checkout_started', { source: 'accountbar' })
     try {
-      const r = plan === 'pro' ? await openBillingPortal() : await startCheckout()
+      const r = isPro ? await openBillingPortal() : await startCheckout()
       if (r?.detail && !r?.url) alert(typeof r.detail === 'string' ? r.detail : 'Billing unavailable')
     } finally {
       setBusy(false)
@@ -71,6 +83,8 @@ function Login() {
   const [msg, setMsg] = useState('')
   const [err, setErr] = useState('')
 
+  useEffect(() => { track('auth_viewed') }, [])
+
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     if (!supabase || busy) return
@@ -79,10 +93,13 @@ function Login() {
       if (mode === 'in') {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
+        track('login_completed')
       } else {
+        track('signup_started')
         const { data, error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
-        if (!data.session) setMsg('Check your email to confirm your account, then sign in.')
+        if (!data.session) { track('signup_email_pending'); setMsg('Check your email to confirm your account, then sign in.') }
+        else track('signup_completed')
       }
     } catch (e: any) {
       setErr(e?.message || 'Something went wrong')

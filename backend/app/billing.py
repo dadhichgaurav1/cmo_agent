@@ -7,7 +7,7 @@ Gated on STRIPE_SECRET_KEY — when unset, `enabled()` is False and routes repor
 from datetime import datetime, timezone
 from typing import Optional
 
-from app import config, db
+from app import config, db, analytics
 
 
 def enabled() -> bool:
@@ -95,6 +95,8 @@ def handle_event(payload: bytes, sig: str) -> dict:
             fields["plan"] = _plan_for_status(sub["status"])
         if org_id:
             db.update_org(org_id, fields)
+            analytics.track(None, "subscription_started",
+                            {"plan": fields["plan"], "status": fields["subscription_status"]}, org_id=org_id)
 
     elif etype.startswith("customer.subscription."):
         org_id = db.org_id_for_customer(obj.get("customer"))
@@ -109,10 +111,18 @@ def handle_event(payload: bytes, sig: str) -> dict:
             fields.update({"plan": "free", "subscription_status": "canceled"})
         if org_id:
             db.update_org(org_id, fields)
+            if etype.endswith(".deleted"):
+                analytics.track(None, "subscription_canceled", {}, org_id=org_id)
+            elif status == "active":
+                analytics.track(None, "subscription_activated", {"plan": fields["plan"]}, org_id=org_id)
+            else:
+                analytics.track(None, "subscription_updated",
+                                {"status": status, "plan": fields["plan"]}, org_id=org_id)
 
     elif etype == "invoice.payment_failed":
         org_id = db.org_id_for_customer(obj.get("customer"))
         if org_id:
             db.update_org(org_id, {"subscription_status": "past_due"})
+            analytics.track(None, "payment_failed", {}, org_id=org_id)
 
     return {"ok": True, "type": etype}

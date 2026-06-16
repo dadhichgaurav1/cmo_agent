@@ -132,7 +132,7 @@ export default function Momentum({ url, m, companyType, edge, onMomentum, onGoTo
       {/* History */}
       <h3 className="momentum-h3">Recent activity</h3>
       {events.length === 0 ? (
-        <p className="muted">No moves yet — your activity will show up here.</p>
+        <p className="muted">No moves yet. Your activity will show up here.</p>
       ) : (
         <ul className="momentum-feed">
           {events.slice(0, 40).map((e) => (

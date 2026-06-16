@@ -7,6 +7,8 @@
  * `onEnter` routes into the product (/app), where AuthGate decides whether to
  * show the login screen (auth mode) or the app directly (demo mode).
  */
+import { track } from './analytics'
+
 export function Landing({ onEnter }: { onEnter: () => void }) {
   return (
     <div className="lp">
@@ -18,6 +20,7 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
       <HowItWorks onEnter={onEnter} />
       <Founder />
       <Compare />
+      <Plans onEnter={onEnter} />
       <Proof />
       <CTA onEnter={onEnter} />
       <Footer />
@@ -35,10 +38,11 @@ function Nav({ onEnter }: { onEnter: () => void }) {
         <a href="#features">What it does</a>
         <a href="#how">How it works</a>
         <a href="#returns">What you get</a>
+        <a href="#pricing">Pricing</a>
       </nav>
       <div className="lp-navcta">
-        <button className="lp-link" onClick={onEnter}>Sign in</button>
-        <button className="lp-btn" onClick={onEnter}>Analyze a company</button>
+        <button className="lp-link" onClick={() => { track('cta_clicked', { location: 'nav_signin' }); onEnter() }}>Sign in</button>
+        <button className="lp-btn" onClick={() => { track('cta_clicked', { location: 'nav' }); onEnter() }}>Analyze a company</button>
       </div>
     </header>
   )
@@ -52,10 +56,10 @@ function Hero({ onEnter }: { onEnter: () => void }) {
         <h1>Point it at a company.<br />Get a CMO cofounder's read.</h1>
         <p className="lp-lede">
           StratCMO finds the rooms where your buyers actually gather and hands you the reply
-          that earns a response — ranked by what's worth doing first. You bring the URL.
+          that earns a response, ranked by what's worth doing first. You bring the URL.
         </p>
         <div className="lp-hero-actions">
-          <button className="lp-btn lg" onClick={onEnter}>Analyze a company →</button>
+          <button className="lp-btn lg" onClick={() => { track('cta_clicked', { location: 'hero' }); onEnter() }}>Analyze a company →</button>
         </div>
         <a className="lp-seehow" href="#how">or see how it works ↓</a>
         <div className="lp-hero-note">Free to run your first brief. No setup.</div>
@@ -84,17 +88,17 @@ function BriefMock() {
           </div>
         </div>
 
-        <div className="lp-mock-sectionlabel">Engagement radar — with drafts</div>
+        <div className="lp-mock-sectionlabel">Engagement radar, with drafts</div>
         <div className="lp-mock-radar">
           <div className="lp-mock-radarhead">
             <span className="radardot" />
-            <span className="opptitle">“Best Postmark alternative for a side project?” — r/SaaS</span>
+            <span className="opptitle">“Best Postmark alternative for a side project?” · r/SaaS</span>
           </div>
           <div className="lp-mock-draft">
             <div className="lp-mock-drafthead">Drafted reply <span className="lp-mini-badge">sonnet</span></div>
             <div className="lp-mock-draftbody">
               Been down this road. For a side project the deliverability tax matters more than
-              the dashboard — three things I'd check before you commit…
+              the dashboard. Three things I'd check before you commit…
             </div>
           </div>
         </div>
@@ -113,9 +117,9 @@ function BriefMock() {
 
 function Problem() {
   const beats = [
-    'Your buyers are answering each other in subreddits, Slacks and threads you don’t even know exist — and your competitors are already in there.',
+    'Your buyers are answering each other in subreddits, Slacks and threads you don’t even know exist, and your competitors are already in there.',
     'You’ve tried the tools. They count mentions and hand you a dashboard. A dashboard is not a decision.',
-    'You don’t need more data about the market. You need someone who tells you the next move — and drafts it.',
+    'You don’t need more data about the market. You need someone who tells you the next move, and drafts it.',
   ]
   return (
     <section className="lp-problem">
@@ -133,10 +137,10 @@ function Problem() {
 
 function Returns() {
   const items = [
-    { k: 'A stage-right objective', v: 'One sentence, defensible — the goal a CMO would set for this exact stage.' },
+    { k: 'A stage-right objective', v: 'One sentence, defensible: the goal a CMO would set for this exact stage.' },
     { k: 'A map of real channels', v: 'Where your buyers already gather, ranked by how reachable they are.' },
     { k: 'Threads + drafted replies', v: 'Specific conversations to join, each with an on-voice reply ready to send.' },
-    { k: 'Ranked moves, P0–P2', v: 'Impact, effort and steps — a plan to execute, not a brainstorm to sort.' },
+    { k: 'Ranked moves, P0–P2', v: 'Impact, effort and steps: a plan to execute, not a brainstorm to sort.' },
   ]
   return (
     <section className="lp-returns" id="returns">
@@ -168,7 +172,7 @@ function Features() {
       <Feature
         verb="Locate + draft"
         title="Find the room. Walk in with the right line."
-        body="StratCMO maps the subreddits, communities and threads your buyers actually use — ranked by how warm each one is — then drafts the reply for the ones worth joining, in a voice that fits the room. Copy it, edit it, send it."
+        body="StratCMO maps the subreddits, communities and threads your buyers actually use, ranked by how warm each one is, then drafts the reply for the ones worth joining, in a voice that fits the room. Copy it, edit it, send it."
         art={
           <div className="lp-fart">
             <div className="lp-mock-sources">
@@ -181,7 +185,7 @@ function Features() {
               <div className="lp-mock-drafthead">Drafted reply <span className="lp-mini-badge">sonnet</span></div>
               <div className="lp-mock-draftbody">
                 Been down this road. For a side project the deliverability tax matters more than
-                the dashboard — here's what I'd check before committing, and where each option
+                the dashboard. Here's what I'd check before committing, and where each option
                 quietly falls down…
               </div>
               <div className="lp-mock-draftactions"><span>copy</span><span>open in tab ↗</span></div>
@@ -196,7 +200,7 @@ function Features() {
         <MiniFeature
           verb="Prioritize"
           title="The moves worth making, ranked."
-          body="Opportunities arrive ranked P0–P2 with impact, effort and steps — a plan to execute, not a list to triage."
+          body="Opportunities arrive ranked P0–P2 with impact, effort and steps: a plan to execute, not a list to triage."
           art={
             <>
               <div className="lp-mock-move"><span className="pri p0">P0</span><span>Deliverability teardown on Hacker News</span></div>
@@ -208,7 +212,7 @@ function Features() {
         <MiniFeature
           verb="Remember"
           title="Run #2 is sharper than #1."
-          body="Synap — the company's durable memory — recalls what's known, reasons, then writes back, so context compounds across runs."
+          body="Synap, the company's durable memory, recalls what's known, reasons, then writes back, so context compounds across runs."
           art={
             <>
               <div className="lp-mock-loop">
@@ -223,20 +227,20 @@ function Features() {
         <MiniFeature
           verb="Watch"
           title="Read what changed, not another dashboard."
-          body="The agent sets recurring monitors and surfaces only what's new — a feed of changes, not noise."
+          body="The agent sets recurring monitors and surfaces only what's new: a feed of changes, not noise."
           art={
             <>
               <div className="lp-mock-monitor">
                 <div className="lp-mock-monitorhead"><b>Competitor pricing</b><span className="lp-cadence">weekly</span></div>
               </div>
-              <div className="lp-mock-delta">+ Mailgun cut its free tier — 2 threads already complaining.</div>
+              <div className="lp-mock-delta">+ Mailgun cut its free tier. 2 threads already complaining.</div>
             </>
           }
         />
       </div>
 
       <p className="lp-truststrip">
-        And every brief <b>shows its work</b> — the ideas it ruled out, with reasons, and the tools
+        And every brief <b>shows its work</b>: the ideas it ruled out, with reasons, and the tools
         it bound along the way. No black box.
       </p>
     </section>
@@ -273,7 +277,7 @@ function MiniFeature({ verb, title, body, art }: {
 
 function HowItWorks({ onEnter }: { onEnter: () => void }) {
   const steps = [
-    { n: '01', verb: 'Paste a URL', body: 'Drop in any company — yours or a competitor\'s. No onboarding, no integrations to wire up first.' },
+    { n: '01', verb: 'Paste a URL', body: 'Drop in any company, yours or a competitor\'s. No onboarding, no integrations to wire up first.' },
     { n: '02', verb: 'Watch it think', body: 'The agent researches live and streams its trace: what it found, what it reasoned, which tools it bound.' },
     { n: '03', verb: 'Act on the brief', body: 'Send the drafts, work the ranked moves, and let the monitors run. Come back to deltas, not a blank page.' },
   ]
@@ -293,7 +297,7 @@ function HowItWorks({ onEnter }: { onEnter: () => void }) {
         ))}
       </div>
       <div className="lp-how-cta">
-        <button className="lp-btn lg" onClick={onEnter}>Run your first brief →</button>
+        <button className="lp-btn lg" onClick={() => { track('cta_clicked', { location: 'how' }); onEnter() }}>Run your first brief →</button>
       </div>
     </section>
   )
@@ -357,7 +361,7 @@ function Compare() {
   ]
   const cell = (v: boolean | string) =>
     v === true ? <span className="lp-yes">✓</span>
-      : v === false ? <span className="lp-no">—</span>
+      : v === false ? <span className="lp-no">✕</span>
         : <span className="lp-partial">{v}</span>
   return (
     <section className="lp-compare">
@@ -391,12 +395,62 @@ function Compare() {
   )
 }
 
+/**
+ * Pricing on the homepage itself: a two-card peek (Free / Pro) that reuses the
+ * .plan/.pricing-grid cards from the standalone /pricing page, with a link through
+ * to the full pricing page (where checkout and portal live).
+ */
+function Plans({ onEnter }: { onEnter: () => void }) {
+  const free = [
+    '1 company',
+    '1 strategic run per week, plus 3 to start',
+    '10 agent chats a day for advice and drafts',
+    'Action Board, momentum, streaks and the Daily Edge',
+  ]
+  const pro = [
+    'Monitors fire daily and refill your board with fresh threads',
+    'Unlimited re-runs, manual or automated (fair use)',
+    'Agent chat that acts, not just advises',
+    'Run StratCMO across all your products',
+  ]
+  return (
+    <section className="lp-plans" id="pricing">
+      <div className="lp-section-head">
+        <span className="lp-kicker">Pricing</span>
+        <h2>Start free. Upgrade when the board pays for itself.</h2>
+      </div>
+      <div className="pricing-grid">
+        <div className="plan">
+          <div className="plan-name">Free</div>
+          <div className="plan-price">$0<span>/forever</span></div>
+          <ul className="plan-feats">
+            {free.map((f) => <li key={f}>{f}</li>)}
+          </ul>
+          <button className="lp-btn ghost" onClick={() => { track('cta_clicked', { location: 'pricing_free' }); onEnter() }}>Start free</button>
+        </div>
+        <div className="plan featured">
+          <div className="plan-badge">Operator</div>
+          <div className="plan-name">Pro</div>
+          <div className="plan-price">$49<span>/month</span></div>
+          <div className="plan-note">or $390/yr · founding rate $39/mo · 14-day trial</div>
+          <ul className="plan-feats">
+            <li>Everything in Free, plus:</li>
+            {pro.map((f) => <li key={f}>{f}</li>)}
+          </ul>
+          <button className="lp-btn" onClick={() => { track('cta_clicked', { location: 'pricing_see_pro' }); window.location.href = '/pricing' }}>See Pro</button>
+        </div>
+      </div>
+      <p className="lp-plans-foot"><a href="/pricing">Full pricing and FAQ →</a></p>
+    </section>
+  )
+}
+
 function CTA({ onEnter }: { onEnter: () => void }) {
   return (
     <section className="lp-band">
       <h2>Stop tracking the market. Start moving on it.</h2>
       <p>Point StratCMO at a company and get a cofounder's read in minutes.</p>
-      <button className="lp-btn lg invert" onClick={onEnter}>Analyze a company →</button>
+      <button className="lp-btn lg invert" onClick={() => { track('cta_clicked', { location: 'band' }); onEnter() }}>Analyze a company →</button>
     </section>
   )
 }
@@ -406,7 +460,7 @@ export function Footer() {
     <footer className="lp-footer">
       <div className="lp-footer-brand">
         <span className="mark">◆</span> StratCMO
-        <span className="lp-footer-by">by Maximem</span>
+        <span className="lp-footer-by">by <a className="maximem-link" href="https://maximem.ai" target="_blank" rel="noopener noreferrer">Maximem</a></span>
       </div>
       <nav className="lp-footer-links">
         <a href="/pricing">Pricing</a>
@@ -414,7 +468,7 @@ export function Footer() {
         <a href="/privacy">Privacy</a>
         <a href="mailto:gaurav@maximem.ai">Support</a>
       </nav>
-      <div className="lp-footer-copy">© {2026} Maximem. All rights reserved.</div>
+      <div className="lp-footer-copy">© {2026} <a className="maximem-link" href="https://maximem.ai" target="_blank" rel="noopener noreferrer">Maximem</a>. All rights reserved.</div>
     </footer>
   )
 }
