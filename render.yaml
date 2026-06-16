@@ -35,6 +35,19 @@ services:
         sync: false
       - key: SUPABASE_JWT_SECRET
         sync: false
+      # Frontend (Vite) build-time vars — baked into the bundle via the Dockerfile ARG block.
+      # Only the web service builds the frontend, so these live here (not on the worker). Without
+      # VITE_SUPABASE_*, the prod frontend silently runs unauthenticated (demo mode).
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+      - key: VITE_SENTRY_DSN
+        sync: false
+      - key: VITE_POSTHOG_KEY
+        sync: false
+      - key: VITE_POSTHOG_HOST
+        sync: false
       # Provision a Render Key Value (Redis) instance or Upstash, then set REDIS_URL on BOTH
       # this web service and the worker below. Leave unset to use the in-process scheduler.
       - key: REDIS_URL
@@ -54,6 +67,12 @@ services:
       - key: RESEND_API_KEY
         sync: false
       - key: RESEND_FROM
+        sync: false
+      # Product analytics (PostHog), server-side. The VITE_POSTHOG_* keys for the frontend are
+      # baked at build time — set those in the Render dashboard like VITE_SUPABASE_*.
+      - key: POSTHOG_API_KEY
+        sync: false
+      - key: POSTHOG_HOST
         sync: false
 
   # Background worker: runs scheduled monitors off the web process (see backend/app/worker.py).
@@ -97,4 +116,9 @@ services:
       - key: RESEND_API_KEY
         sync: false
       - key: RESEND_FROM
+        sync: false
+      # Product analytics (PostHog) — the worker emits monitor/feeder events too.
+      - key: POSTHOG_API_KEY
+        sync: false
+      - key: POSTHOG_HOST
         sync: false

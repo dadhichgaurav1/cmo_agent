@@ -1,6 +1,19 @@
 # ---- frontend build ----
 FROM node:22-alpine AS frontend
 WORKDIR /fe
+# Vite inlines VITE_* into the bundle at build time, so they must exist during `npm run build`.
+# Render passes a service's env vars as Docker build args when declared as ARG here; an unset one
+# is just empty (same as before). These never reach the runtime stage below.
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+ARG VITE_SENTRY_DSN
+ARG VITE_POSTHOG_KEY
+ARG VITE_POSTHOG_HOST
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
+    VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY \
+    VITE_SENTRY_DSN=$VITE_SENTRY_DSN \
+    VITE_POSTHOG_KEY=$VITE_POSTHOG_KEY \
+    VITE_POSTHOG_HOST=$VITE_POSTHOG_HOST
 COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/ ./
